@@ -1,0 +1,15 @@
+allowBuilds:
+  '"': true
+  '[': true
+  ']': true
+  b: true
+  d: true
+  e: true
+  esbuild: set this to true or false
+  i: true
+  l: true
+  msw: set this to true or false
+  s: true
+  u: true
+
+onlyBuiltDependencies: '["esbuild"]'
