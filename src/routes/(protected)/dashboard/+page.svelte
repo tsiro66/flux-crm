@@ -1,13 +1,8 @@
 <script lang="ts">
-	import {
-		Card,
-		CardHeader,
-		CardTitle,
-		CardContent
-	} from '$lib/components/ui/card';
 	import type { Chart as ChartType } from 'chart.js';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
+	import { DollarSign, Clock, FolderOpen, Users } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -22,6 +17,29 @@
 			maximumFractionDigits: 0
 		}).format(amount / 100);
 	}
+
+	const stats = $derived([
+		{
+			label: 'Total Revenue',
+			value: formatCurrency(data.totalRevenue),
+			icon: DollarSign
+		},
+		{
+			label: 'Outstanding',
+			value: formatCurrency(data.outstandingRevenue),
+			icon: Clock
+		},
+		{
+			label: 'Projects',
+			value: String(data.projectCount),
+			icon: FolderOpen
+		},
+		{
+			label: 'Clients',
+			value: String(data.clientCount),
+			icon: Users
+		}
+	]);
 
 	onMount(async () => {
 		const { Chart, registerables } = await import('chart.js');
@@ -43,10 +61,11 @@
 					{
 						label: 'Revenue',
 						data: values.length > 0 ? values : [0],
-						backgroundColor: 'oklch(0.205 0 0 / 0.8)',
+						backgroundColor: 'oklch(0.205 0 0 / 0.1)',
 						borderColor: 'oklch(0.205 0 0)',
-						borderWidth: 1,
-						borderRadius: 4
+						borderWidth: 1.5,
+						borderRadius: 6,
+						barPercentage: 0.6
 					}
 				]
 			},
@@ -57,9 +76,21 @@
 					legend: { display: false }
 				},
 				scales: {
+					x: {
+						grid: { display: false },
+						border: { display: false },
+						ticks: {
+							font: { size: 11 }
+						}
+					},
 					y: {
 						beginAtZero: true,
+						grid: {
+							color: 'oklch(0.922 0 0)'
+						},
+						border: { display: false },
 						ticks: {
+							font: { size: 11 },
 							callback: (value) =>
 								new Intl.NumberFormat('en-US', {
 									style: 'currency',
@@ -74,52 +105,33 @@
 	});
 </script>
 
-<div>
-	<h1 class="mb-6 text-2xl font-bold">Dashboard</h1>
+<div class="p-8">
+	<h1 class="mb-8 text-2xl font-semibold tracking-tight">Dashboard</h1>
 
-	<div class="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-		<Card>
-			<CardHeader>
-				<CardTitle class="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p class="text-2xl font-bold">{formatCurrency(data.totalRevenue)}</p>
-			</CardContent>
-		</Card>
-		<Card>
-			<CardHeader>
-				<CardTitle class="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p class="text-2xl font-bold">{formatCurrency(data.outstandingRevenue)}</p>
-			</CardContent>
-		</Card>
-		<Card>
-			<CardHeader>
-				<CardTitle class="text-sm font-medium text-muted-foreground">Projects</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p class="text-2xl font-bold">{data.projectCount}</p>
-			</CardContent>
-		</Card>
-		<Card>
-			<CardHeader>
-				<CardTitle class="text-sm font-medium text-muted-foreground">Clients</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p class="text-2xl font-bold">{data.clientCount}</p>
-			</CardContent>
-		</Card>
+	<div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		{#each stats as stat (stat.label)}
+			<div class="rounded-lg border p-5">
+				<div class="flex items-center justify-between">
+					<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+						{stat.label}
+					</p>
+					<div class="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+						<stat.icon class="h-4 w-4 text-muted-foreground" />
+					</div>
+				</div>
+				<p class="mt-2 text-2xl font-semibold tracking-tight">{stat.value}</p>
+			</div>
+		{/each}
 	</div>
 
-	<Card>
-		<CardHeader>
-			<CardTitle>Revenue by Month</CardTitle>
-		</CardHeader>
-		<CardContent>
+	<div class="rounded-lg border">
+		<div class="border-b px-5 py-4">
+			<h2 class="font-semibold">Revenue by Month</h2>
+		</div>
+		<div class="p-5">
 			<div class="h-[300px]">
 				<canvas bind:this={canvasEl}></canvas>
 			</div>
-		</CardContent>
-	</Card>
+		</div>
+	</div>
 </div>

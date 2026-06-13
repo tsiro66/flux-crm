@@ -59,6 +59,25 @@ export const files = pgTable('files', {
 	userId: uuid('user_id').notNull()
 });
 
+export const chatConversations = pgTable('chat_conversations', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	userId: uuid('user_id').notNull(),
+	title: text('title').notNull().default('New Chat'),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const chatMessages = pgTable('chat_messages', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	conversationId: uuid('conversation_id')
+		.notNull()
+		.references(() => chatConversations.id, { onDelete: 'cascade' }),
+	userId: uuid('user_id').notNull(),
+	role: text('role').notNull(),
+	content: text('content').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
 export const clientsRelations = relations(clients, ({ many }) => ({
 	projects: many(projects),
 	files: many(files)
@@ -83,5 +102,16 @@ export const filesRelations = relations(files, ({ one }) => ({
 	client: one(clients, {
 		fields: [files.clientId],
 		references: [clients.id]
+	})
+}));
+
+export const chatConversationsRelations = relations(chatConversations, ({ many }) => ({
+	messages: many(chatMessages)
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+	conversation: one(chatConversations, {
+		fields: [chatMessages.conversationId],
+		references: [chatConversations.id]
 	})
 }));

@@ -1,51 +1,28 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { clients } from '$lib/server/db/schema';
+import { listClients, createClient } from '$lib/server/services';
 import { createClientSchema } from '$lib/validations';
-import { eq, and, ilike, or } from 'drizzle-orm';
+import { unauthorized, handleZodError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
 	const search = url.searchParams.get('search') || '';
-
-	const result = await db
-		.select()
-		.from(clients)
-		.where(
-			and(
-				eq(clients.userId, locals.user.id),
-				search
-					? or(ilike(clients.name, `%${search}%`), ilike(clients.email, `%${search}%`))
-					: undefined!
-			)
-		)
-		.orderBy(clients.createdAt);
+	const result = await listClients(locals.user.id, search || undefined);
 
 	return json(result);
 };
 
 export const POST: RequestHandler = async ({ locals, request }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
 	const body = await request.json();
 	const parsed = createClientSchema.safeParse(body);
 
 	if (!parsed.success) {
-		return json({ error: parsed.error.issues }, { status: 400 });
+		return handleZodError(parsed.error);
 	}
 
-	const [client] = await db
-		.insert(clients)
-		.values({
-			name: parsed.data.name,
-			email: parsed.data.email || null,
-			phone: parsed.data.phone || null,
-			notes: parsed.data.notes || null,
-			userId: locals.user.id
-		})
-		.returning();
-
+	const client = await createClient(locals.user.id, parsed.data);
 	return json(client, { status: 201 });
 };

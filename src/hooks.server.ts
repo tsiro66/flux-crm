@@ -1,16 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '$env/static/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const supabaseUrl = process.env.SUPABASE_URL;
-	const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-	if (!supabaseUrl || !supabaseAnonKey) {
-		throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables');
-	}
-
-	event.locals.supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+	event.locals.supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 		cookies: {
 			getAll() {
 				return event.cookies.getAll();
@@ -25,14 +19,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	event.locals.safeGetSession = async () => {
 		const {
-			data: { session }
-		} = await event.locals.supabase.auth.getSession();
-		if (!session) return { session: null, user: null };
-
-		const {
 			data: { user }
 		} = await event.locals.supabase.auth.getUser();
 		if (!user) return { session: null, user: null };
+
+		const {
+			data: { session }
+		} = await event.locals.supabase.auth.getSession();
 
 		return { session, user };
 	};

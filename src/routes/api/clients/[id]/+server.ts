@@ -1,59 +1,39 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { clients } from '$lib/server/db/schema';
+import { getClientById, updateClient, deleteClient } from '$lib/server/services';
 import { updateClientSchema } from '$lib/validations';
-import { eq, and } from 'drizzle-orm';
+import { unauthorized, notFound, handleZodError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, params }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
-	const [client] = await db
-		.select()
-		.from(clients)
-		.where(and(eq(clients.id, params.id), eq(clients.userId, locals.user.id)));
-
-	if (!client) return json({ error: 'Not found' }, { status: 404 });
+	const client = await getClientById(locals.user.id, params.id);
+	if (!client) return notFound('Client');
 
 	return json(client);
 };
 
 export const PUT: RequestHandler = async ({ locals, params, request }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
 	const body = await request.json();
 	const parsed = updateClientSchema.safeParse(body);
 
 	if (!parsed.success) {
-		return json({ error: parsed.error.issues }, { status: 400 });
+		return handleZodError(parsed.error);
 	}
 
-	const [updated] = await db
-		.update(clients)
-		.set({
-			name: parsed.data.name,
-			email: parsed.data.email || null,
-			phone: parsed.data.phone || null,
-			notes: parsed.data.notes || null,
-			updatedAt: new Date()
-		})
-		.where(and(eq(clients.id, params.id), eq(clients.userId, locals.user.id)))
-		.returning();
-
-	if (!updated) return json({ error: 'Not found' }, { status: 404 });
+	const updated = await updateClient(locals.user.id, params.id, parsed.data);
+	if (!updated) return notFound('Client');
 
 	return json(updated);
 };
 
 export const DELETE: RequestHandler = async ({ locals, params }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
-	const [deleted] = await db
-		.delete(clients)
-		.where(and(eq(clients.id, params.id), eq(clients.userId, locals.user.id)))
-		.returning();
-
-	if (!deleted) return json({ error: 'Not found' }, { status: 404 });
+	const deleted = await deleteClient(locals.user.id, params.id);
+	if (!deleted) return notFound('Client');
 
 	return json({ success: true });
 };

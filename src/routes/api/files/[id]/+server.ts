@@ -1,26 +1,31 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { files } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
+import { getFileById, deleteFileRecord } from '$lib/server/services';
+import { generateDownloadUrl, deleteStorageFile } from '$lib/server/services/storage';
+import { unauthorized, notFound, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
+export const GET: RequestHandler = async ({ locals, params }) => {
+	if (!locals.user) return unauthorized();
+
+	const file = await getFileById(locals.user.id, params.id);
+	if (!file) return notFound('File');
+
+	try {
+		const url = await generateDownloadUrl(file.storagePath);
+		return json({ url, filename: file.filename, fileType: file.fileType });
+	} catch (error) {
+		return handleApiError(error);
+	}
+};
+
 export const DELETE: RequestHandler = async ({ locals, params }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
-	const [file] = await db
-		.select()
-		.from(files)
-		.where(and(eq(files.id, params.id), eq(files.userId, locals.user.id)));
+	const file = await getFileById(locals.user.id, params.id);
+	if (!file) return notFound('File');
 
-	if (!file) return json({ error: 'Not found' }, { status: 404 });
-
-	const supabase = createClient(env.SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY!);
-
-	await supabase.storage.from('client-files').remove([file.storagePath]);
-
-	await db.delete(files).where(eq(files.id, params.id));
+	await deleteStorageFile(file.storagePath);
+	await deleteFileRecord(file.id);
 
 	return json({ success: true });
 };

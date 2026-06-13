@@ -1,28 +1,21 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
+import { generateUploadUrl } from '$lib/server/services';
+import { unauthorized, badRequest, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
 	const { filename, contentType, clientId } = await request.json();
 
 	if (!filename || !contentType || !clientId) {
-		return json({ error: 'Missing required fields' }, { status: 400 });
+		return badRequest('Missing required fields');
 	}
 
-	const supabase = createClient(env.SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY!);
-
-	const storagePath = `${locals.user.id}/${clientId}/${Date.now()}-${filename}`;
-
-	const { data, error } = await supabase.storage
-		.from('client-files')
-		.createSignedUploadUrl(storagePath);
-
-	if (error) {
-		return json({ error: error.message }, { status: 500 });
+	try {
+		const result = await generateUploadUrl(locals.user.id, clientId, filename);
+		return json(result);
+	} catch (error) {
+		return handleApiError(error);
 	}
-
-	return json({ signedUrl: data.signedUrl, storagePath, token: data.token });
 };

@@ -20,10 +20,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		.where(and(eq(projects.clientId, params.id), eq(projects.userId, locals.user.id)))
 		.orderBy(projects.createdAt);
 
-	const clientFiles = await db
-		.select()
-		.from(files)
-		.where(eq(files.clientId, params.id));
+	const clientFiles = await db.select().from(files).where(eq(files.clientId, params.id));
 
 	return {
 		client,

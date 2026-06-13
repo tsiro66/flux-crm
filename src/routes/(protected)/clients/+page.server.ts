@@ -1,16 +1,40 @@
 import { db } from '$lib/server/db';
 import { clients, projects, files } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) return { clients: [], projectsByClient: {}, filesByClient: {} };
+export const load: PageServerLoad = async ({ locals, url }) => {
+	if (!locals.user)
+		return {
+			clients: [],
+			projectsByClient: {},
+			filesByClient: {},
+			total: 0,
+			page: 1,
+			totalPages: 1
+		};
+
+	const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+	const limit = 20;
+	const offset = (page - 1) * limit;
+
+	const userId = locals.user.id;
+
+	const [countResult] = await db
+		.select({ total: count() })
+		.from(clients)
+		.where(eq(clients.userId, userId));
+
+	const total = Number(countResult.total);
+	const totalPages = Math.max(1, Math.ceil(total / limit));
 
 	const clientList = await db
 		.select()
 		.from(clients)
-		.where(eq(clients.userId, locals.user.id))
-		.orderBy(clients.createdAt);
+		.where(eq(clients.userId, userId))
+		.orderBy(clients.createdAt)
+		.limit(limit)
+		.offset(offset);
 
 	const clientIds = clientList.map((c) => c.id);
 
@@ -21,7 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const projectCounts = await db
 			.select({ clientId: projects.clientId, count: projects.id })
 			.from(projects)
-			.where(eq(projects.userId, locals.user.id))
+			.where(eq(projects.userId, userId))
 			.groupBy(projects.clientId, projects.id);
 
 		const projectCountMap = new Map<string, number>();
@@ -45,6 +69,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		clients: clientList,
 		projectsByClient,
-		filesByClient
+		filesByClient,
+		total,
+		page,
+		totalPages
 	};
 };

@@ -1,0 +1,8 @@
+export { default as ClientHeader } from './ClientHeader.svelte';
+export { default as ClientNotes } from './ClientNotes.svelte';
+export { default as ClientFiles } from './ClientFiles.svelte';
+export { default as ProjectCard } from './ProjectCard.svelte';
+export { default as EditClientDialog } from './EditClientDialog.svelte';
+export { default as DeleteConfirmDialog } from './DeleteConfirmDialog.svelte';
+export { default as ProjectFormDialog } from './ProjectFormDialog.svelte';
+export { default as PaymentDialog } from './PaymentDialog.svelte';

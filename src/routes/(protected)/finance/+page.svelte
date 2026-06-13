@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
+	import { formatCurrency, invoiceStatusVariants, paymentStatusVariants } from '$lib/utils';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
+	import { GripVertical } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -20,22 +22,6 @@
 		{ key: 'partial_payment', label: 'Partial Payment' },
 		{ key: 'paid', label: 'Paid' }
 	] as const;
-
-	const invoiceStatusVariants: Record<string, string> = {
-		for_invoice: 'bg-blue-100 text-blue-800 border-blue-200',
-		invoiced: 'bg-green-100 text-green-800 border-green-200',
-		no_invoice: 'bg-gray-100 text-gray-800 border-gray-200'
-	};
-
-	const paymentStatusVariants: Record<string, string> = {
-		not_paid: 'bg-red-100 text-red-800 border-red-200',
-		partial_payment: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-		paid: 'bg-green-100 text-green-800 border-green-200'
-	};
-
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
-	}
 
 	function filterByInvoiceStatus(status: string): Project[] {
 		return data.projects.filter((p) => p.invoiceStatus === status);
@@ -80,15 +66,17 @@
 	}
 </script>
 
-<div>
-	<h1 class="mb-6 text-2xl font-bold">Finance</h1>
+<div class="p-8">
+	<h1 class="mb-8 text-2xl font-semibold tracking-tight">Finance</h1>
 
-	<div class="mb-8">
-		<h2 class="mb-4 text-lg font-semibold">Invoice Status</h2>
+	<div class="mb-10">
+		<h2 class="mb-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+			Invoice Status
+		</h2>
 		<div class="grid grid-cols-3 gap-4">
 			{#each invoiceColumns as column (column.key)}
 				<div
-					class="min-h-[200px] rounded-lg border bg-muted/50 p-4"
+					class="min-h-[200px] rounded-lg border bg-muted/30 p-4 transition-colors"
 					ondragover={handleDragOver}
 					ondrop={() => handleDropInvoice(column.key)}
 					role="region"
@@ -96,23 +84,30 @@
 				>
 					<div class="mb-3 flex items-center justify-between">
 						<h3 class="text-sm font-medium">{column.label}</h3>
-						<Badge variant="secondary" class="text-xs">
+						<span
+							class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground"
+						>
 							{filterByInvoiceStatus(column.key).length}
-						</Badge>
+						</span>
 					</div>
-					<div class="space-y-2">
+					<div class="space-y-1.5">
 						{#each filterByInvoiceStatus(column.key) as project (project.id)}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
 								draggable="true"
 								ondragstart={() => handleDragStart(project.id)}
-								class="cursor-grab rounded-md border bg-background p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
+								class="cursor-grab rounded-md border bg-background px-3 py-2.5 shadow-sm transition-all hover:shadow-md active:cursor-grabbing"
 							>
-								<p class="text-sm font-medium">
-									{data.clientMap[project.clientId] || 'Unknown'}
-								</p>
-								<p class="text-xs text-muted-foreground">{project.title}</p>
-								<div class="mt-2 flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<GripVertical class="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-medium">
+											{data.clientMap[project.clientId] || 'Unknown'}
+										</p>
+										<p class="truncate text-xs text-muted-foreground">{project.title}</p>
+									</div>
+								</div>
+								<div class="mt-1.5 flex items-center justify-between pl-5.5">
 									<span class="text-sm font-medium">{formatCurrency(project.totalAmount)}</span>
 									<Badge class={paymentStatusVariants[project.paymentStatus]}>
 										{#if project.paymentStatus === 'not_paid'}
@@ -133,11 +128,13 @@
 	</div>
 
 	<div>
-		<h2 class="mb-4 text-lg font-semibold">Payment Status</h2>
+		<h2 class="mb-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+			Payment Status
+		</h2>
 		<div class="grid grid-cols-3 gap-4">
 			{#each paymentColumns as column (column.key)}
 				<div
-					class="min-h-[200px] rounded-lg border bg-muted/50 p-4"
+					class="min-h-[200px] rounded-lg border bg-muted/30 p-4 transition-colors"
 					ondragover={handleDragOver}
 					ondrop={() => handleDropPayment(column.key)}
 					role="region"
@@ -145,23 +142,30 @@
 				>
 					<div class="mb-3 flex items-center justify-between">
 						<h3 class="text-sm font-medium">{column.label}</h3>
-						<Badge variant="secondary" class="text-xs">
+						<span
+							class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground"
+						>
 							{filterByPaymentStatus(column.key).length}
-						</Badge>
+						</span>
 					</div>
-					<div class="space-y-2">
+					<div class="space-y-1.5">
 						{#each filterByPaymentStatus(column.key) as project (project.id)}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
 								draggable="true"
 								ondragstart={() => handleDragStart(project.id)}
-								class="cursor-grab rounded-md border bg-background p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
+								class="cursor-grab rounded-md border bg-background px-3 py-2.5 shadow-sm transition-all hover:shadow-md active:cursor-grabbing"
 							>
-								<p class="text-sm font-medium">
-									{data.clientMap[project.clientId] || 'Unknown'}
-								</p>
-								<p class="text-xs text-muted-foreground">{project.title}</p>
-								<div class="mt-2 flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<GripVertical class="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-medium">
+											{data.clientMap[project.clientId] || 'Unknown'}
+										</p>
+										<p class="truncate text-xs text-muted-foreground">{project.title}</p>
+									</div>
+								</div>
+								<div class="mt-1.5 flex items-center justify-between pl-5.5">
 									<span class="text-sm font-medium">{formatCurrency(project.totalAmount)}</span>
 									<Badge class={invoiceStatusVariants[project.invoiceStatus]}>
 										{#if project.invoiceStatus === 'for_invoice'}
@@ -174,8 +178,10 @@
 									</Badge>
 								</div>
 								{#if project.paidAmount > 0}
-									<div class="mt-1 text-xs text-muted-foreground">
-										Paid: {formatCurrency(project.paidAmount)} / {formatCurrency(project.totalAmount)}
+									<div class="mt-1 pl-5.5 text-xs text-muted-foreground">
+										Paid: {formatCurrency(project.paidAmount)} / {formatCurrency(
+											project.totalAmount
+										)}
 									</div>
 								{/if}
 							</div>

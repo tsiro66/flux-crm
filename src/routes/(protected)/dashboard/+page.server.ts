@@ -4,7 +4,14 @@ import { eq, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) return { totalRevenue: 0, outstandingRevenue: 0, projectCount: 0, clientCount: 0, monthlyRevenue: [] };
+	if (!locals.user)
+		return {
+			totalRevenue: 0,
+			outstandingRevenue: 0,
+			projectCount: 0,
+			clientCount: 0,
+			monthlyRevenue: []
+		};
 
 	const userId = locals.user.id;
 

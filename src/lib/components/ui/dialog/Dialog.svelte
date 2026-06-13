@@ -28,10 +28,9 @@
 
 {#if open}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center"
-		onkeydown={handleKeydown}
-	>
+	<div class="fixed inset-0 z-50 flex items-center justify-center" onkeydown={handleKeydown}>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="fixed inset-0 bg-black/80" onclick={handleBackdropClick}></div>
 		<div
 			class={cn(
@@ -42,7 +41,8 @@
 			{@render children()}
 			<button
 				onclick={handleClose}
-				class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+				aria-label="Close"
+				class="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

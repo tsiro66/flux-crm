@@ -1,15 +1,21 @@
 allowBuilds:
   '"': true
+  '@google/genai': true
+  '@mongodb-js/zstd': true
   '[': true
   ']': true
   b: true
   d: true
   e: true
-  esbuild: set this to true or false
+  esbuild: true
   i: true
   l: true
   msw: set this to true or false
+  node-liblzma: true
+  protobufjs: true
   s: true
+  sharp: true
   u: true
+  workerd: true
 
 onlyBuiltDependencies: '["esbuild"]'

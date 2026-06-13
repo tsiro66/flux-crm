@@ -1,34 +1,19 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { projects } from '$lib/server/db/schema';
+import { createProject } from '$lib/server/services';
 import { createProjectSchema } from '$lib/validations';
-
+import { unauthorized, handleZodError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
-	if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
+	if (!locals.user) return unauthorized();
 
 	const body = await request.json();
 	const parsed = createProjectSchema.safeParse(body);
 
 	if (!parsed.success) {
-		return json({ error: parsed.error.issues }, { status: 400 });
+		return handleZodError(parsed.error);
 	}
 
-	const totalAmountCents = Math.round(parseFloat(String(parsed.data.totalAmount)) * 100);
-
-	const [project] = await db
-		.insert(projects)
-		.values({
-			title: parsed.data.title,
-			clientId: body.clientId,
-			totalAmount: totalAmountCents,
-			invoiceStatus: parsed.data.invoiceStatus,
-			paymentStatus: parsed.data.paymentStatus,
-			date: parsed.data.date ? new Date(parsed.data.date) : new Date(),
-			userId: locals.user.id
-		})
-		.returning();
-
+	const project = await createProject(locals.user.id, { ...parsed.data, clientId: body.clientId });
 	return json(project, { status: 201 });
 };
