@@ -4,16 +4,10 @@
 
 	let {
 		clientId,
-		initialNotes,
-		clientName,
-		clientEmail,
-		clientPhone
+		initialNotes
 	}: {
 		clientId: string;
 		initialNotes: string;
-		clientName: string;
-		clientEmail: string;
-		clientPhone: string;
 	} = $props();
 
 	// svelte-ignore state_referenced_locally
@@ -32,14 +26,9 @@
 		saveTimeout = setTimeout(async () => {
 			isSaving = true;
 			await fetch(`/api/clients/${clientId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					name: clientName,
-					email: clientEmail || '',
-					phone: clientPhone || '',
-					notes: currentNotes
-				})
+				body: JSON.stringify({ notes: currentNotes })
 			});
 			await invalidateAll();
 			isSaving = false;

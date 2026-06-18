@@ -3,30 +3,22 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { DollarSign, Clock, FolderOpen, Users } from '@lucide/svelte';
+	import { formatCurrency } from '$lib/utils';
 
 	let { data }: { data: PageData } = $props();
 
 	let canvasEl: HTMLCanvasElement;
 	let chartInstance: ChartType | null = null;
 
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD',
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0
-		}).format(amount / 100);
-	}
-
 	const stats = $derived([
 		{
 			label: 'Total Revenue',
-			value: formatCurrency(data.totalRevenue),
+			value: formatCurrency(data.totalRevenue, { decimals: false }),
 			icon: DollarSign
 		},
 		{
 			label: 'Outstanding',
-			value: formatCurrency(data.outstandingRevenue),
+			value: formatCurrency(data.outstandingRevenue, { decimals: false }),
 			icon: Clock
 		},
 		{

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { getClientById, updateClient, deleteClient } from '$lib/server/services';
-import { updateClientSchema } from '$lib/validations';
+import { getClientById, updateClient, patchClient, deleteClient } from '$lib/server/services';
+import { updateClientSchema, patchClientSchema } from '$lib/validations';
 import { unauthorized, notFound, handleZodError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
@@ -24,6 +24,22 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 	}
 
 	const updated = await updateClient(locals.user.id, params.id, parsed.data);
+	if (!updated) return notFound('Client');
+
+	return json(updated);
+};
+
+export const PATCH: RequestHandler = async ({ locals, params, request }) => {
+	if (!locals.user) return unauthorized();
+
+	const body = await request.json();
+	const parsed = patchClientSchema.safeParse(body);
+
+	if (!parsed.success) {
+		return handleZodError(parsed.error);
+	}
+
+	const updated = await patchClient(locals.user.id, params.id, parsed.data);
 	if (!updated) return notFound('Client');
 
 	return json(updated);

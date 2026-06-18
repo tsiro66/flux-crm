@@ -14,6 +14,6 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		return handleZodError(parsed.error);
 	}
 
-	const project = await createProject(locals.user.id, { ...parsed.data, clientId: body.clientId });
+	const project = await createProject(locals.user.id, parsed.data);
 	return json(project, { status: 201 });
 };

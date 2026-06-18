@@ -32,18 +32,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.25
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
       tailwind-variants:
         specifier: ^3.2.2
         version: 3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.3.0)
-      valibot:
-        specifier: ^1.4.1
-        version: 1.4.1(typescript@6.0.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3

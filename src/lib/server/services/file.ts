@@ -27,6 +27,6 @@ export async function getFileById(userId: string, id: string) {
 	return file ?? null;
 }
 
-export async function deleteFileRecord(id: string) {
-	await db.delete(files).where(eq(files.id, id));
+export async function deleteFileRecord(userId: string, id: string) {
+	await db.delete(files).where(and(eq(files.id, id), eq(files.userId, userId)));
 }

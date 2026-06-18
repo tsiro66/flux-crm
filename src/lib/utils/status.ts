@@ -1,23 +1,30 @@
-export const invoiceStatusLabels: Record<string, string> = {
+import type { invoiceStatusEnum, paymentStatusEnum } from '$lib/server/db/schema';
+
+type InvoiceStatus = (typeof invoiceStatusEnum.enumValues)[number];
+type PaymentStatus = (typeof paymentStatusEnum.enumValues)[number];
+
+export const invoiceStatusLabels: Record<InvoiceStatus, string> = {
 	for_invoice: 'For Invoice',
 	invoiced: 'Invoiced',
 	no_invoice: 'No Invoice'
 };
 
-export const paymentStatusLabels: Record<string, string> = {
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
 	not_paid: 'Not Paid',
 	partial_payment: 'Partial',
 	paid: 'Paid'
 };
 
-export const invoiceStatusVariants: Record<string, string> = {
-	for_invoice: 'bg-blue-50 text-blue-700 border-blue-200 ring-blue-600/10',
-	invoiced: 'bg-green-50 text-green-700 border-green-200 ring-green-600/10',
-	no_invoice: 'bg-gray-50 text-gray-700 border-gray-200 ring-gray-600/10'
+export const invoiceStatusVariants: Record<InvoiceStatus, string> = {
+	for_invoice: 'bg-blue-600 text-white',
+	invoiced: 'bg-green-600 text-white',
+	no_invoice: 'bg-gray-500 text-white'
 };
 
-export const paymentStatusVariants: Record<string, string> = {
-	not_paid: 'bg-red-50 text-red-700 border-red-200 ring-red-600/10',
-	partial_payment: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-600/10',
-	paid: 'bg-green-50 text-green-700 border-green-200 ring-green-600/10'
+export const paymentStatusVariants: Record<PaymentStatus, string> = {
+	not_paid: 'bg-red-600 text-white',
+	partial_payment: 'bg-amber-500 text-white',
+	paid: 'bg-green-600 text-white'
 };
+
+export type { InvoiceStatus, PaymentStatus };

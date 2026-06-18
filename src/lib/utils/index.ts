@@ -1,8 +1,10 @@
 export { cn } from './cn';
-export { formatCurrency, getInitials, toCents, toDollars } from './formatters';
+export { formatCurrency, getInitials, toCents, toDollars, formatDate } from './formatters';
 export {
 	invoiceStatusLabels,
 	paymentStatusLabels,
 	invoiceStatusVariants,
-	paymentStatusVariants
+	paymentStatusVariants,
+	type InvoiceStatus,
+	type PaymentStatus
 } from './status';

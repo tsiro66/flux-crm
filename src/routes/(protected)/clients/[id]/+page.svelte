@@ -31,6 +31,7 @@
 
 	let showPaymentDialog = $state(false);
 	let paymentProjectId = $state('');
+	let editingPayment: (typeof data.projectPayments)[0]['payments'][0] | null = $state(null);
 
 	async function handleDeleteClient() {
 		deleteLoading = true;
@@ -68,61 +69,82 @@
 			toastError('Failed to delete project');
 		}
 	}
+
+	function handleEditPayment(payment: (typeof data.projectPayments)[0]['payments'][0]) {
+		editingPayment = payment;
+		paymentProjectId = payment.projectId;
+		showPaymentDialog = true;
+	}
+
+	async function handleDeletePayment(paymentId: string) {
+		const res = await fetch(`/api/payments/${paymentId}`, { method: 'DELETE' });
+		if (res.ok) {
+			toastSuccess('Payment deleted');
+			invalidateAll();
+		} else {
+			toastError('Failed to delete payment');
+		}
+	}
+
+	function getPaymentsForProject(projectId: string) {
+		const found = data.projectPayments.find((p) => p.projectId === projectId);
+		return found?.payments ?? [];
+	}
 </script>
 
-<ClientHeader
-	clientName={data.client.name}
-	clientEmail={data.client.email}
-	clientPhone={data.client.phone}
-	onEdit={() => (showEditDialog = true)}
-	onDelete={() => (showDeleteDialog = true)}
-/>
+<div class="p-8">
+	<ClientHeader
+		clientName={data.client.name}
+		clientEmail={data.client.email}
+		clientPhone={data.client.phone}
+		onEdit={() => (showEditDialog = true)}
+		onDelete={() => (showDeleteDialog = true)}
+	/>
 
-<div class="grid gap-8 lg:grid-cols-3">
-	<div class="space-y-6 lg:col-span-1">
-		<ClientNotes
-			clientId={data.client.id}
-			initialNotes={data.client.notes || ''}
-			clientName={data.client.name}
-			clientEmail={data.client.email || ''}
-			clientPhone={data.client.phone || ''}
-		/>
-		<ClientFiles clientId={data.client.id} files={data.files} />
-	</div>
-
-	<div class="lg:col-span-2">
-		<div class="mb-4 flex items-center justify-between">
-			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-				Projects ({data.projects.length})
-			</h2>
-			<Button size="sm" onclick={openCreateProject} class="gap-1.5">
-				<Plus class="h-3.5 w-3.5" />
-				Add Project
-			</Button>
+	<div class="grid gap-8 lg:grid-cols-3">
+		<div class="space-y-6 lg:col-span-1">
+			<ClientNotes clientId={data.client.id} initialNotes={data.client.notes || ''} />
+			<ClientFiles clientId={data.client.id} files={data.files} />
 		</div>
 
-		{#if data.projects.length === 0}
-			<div class="py-12 text-center">
-				<p class="text-sm text-muted-foreground">No projects yet. Create your first project.</p>
+		<div class="lg:col-span-2">
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+					Projects ({data.projects.length})
+				</h2>
+				<Button size="sm" onclick={openCreateProject} class="gap-1.5">
+					<Plus class="h-3.5 w-3.5" />
+					Add Project
+				</Button>
 			</div>
-		{:else}
-			<div class="space-y-2">
-				{#each data.projects as project (project.id)}
-					<ProjectCard
-						{project}
-						onAddPayment={() => {
-							paymentProjectId = project.id;
-							showPaymentDialog = true;
-						}}
-						onEdit={() => openEditProject(project)}
-						onDelete={() => {
-							deleteProjectId = project.id;
-							deleteProjectDialog = true;
-						}}
-					/>
-				{/each}
-			</div>
-		{/if}
+
+			{#if data.projects.length === 0}
+				<div class="py-12 text-center">
+					<p class="text-sm text-muted-foreground">No projects yet. Create your first project.</p>
+				</div>
+			{:else}
+				<div class="space-y-2">
+					{#each data.projects as project (project.id)}
+						<ProjectCard
+							{project}
+							payments={getPaymentsForProject(project.id)}
+							onAddPayment={() => {
+								paymentProjectId = project.id;
+								editingPayment = null;
+								showPaymentDialog = true;
+							}}
+							onEditPayment={handleEditPayment}
+							onDeletePayment={handleDeletePayment}
+							onEdit={() => openEditProject(project)}
+							onDelete={() => {
+								deleteProjectId = project.id;
+								deleteProjectDialog = true;
+							}}
+						/>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -150,4 +172,8 @@
 	project={editingProject}
 />
 
-<PaymentDialog bind:open={showPaymentDialog} projectId={paymentProjectId} />
+<PaymentDialog
+	bind:open={showPaymentDialog}
+	projectId={paymentProjectId}
+	payment={editingPayment}
+/>

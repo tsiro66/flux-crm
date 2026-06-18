@@ -69,6 +69,7 @@ describe('project validations', () => {
 	describe('createProjectSchema', () => {
 		it('validates a valid project', () => {
 			const result = createProjectSchema.safeParse({
+				clientId: '550e8400-e29b-41d4-a716-446655440000',
 				title: 'New Project',
 				totalAmount: 5000,
 				invoiceStatus: 'for_invoice',
@@ -80,6 +81,7 @@ describe('project validations', () => {
 
 		it('requires title', () => {
 			const result = createProjectSchema.safeParse({
+				clientId: '550e8400-e29b-41d4-a716-446655440000',
 				title: '',
 				totalAmount: 0,
 				invoiceStatus: 'for_invoice',
@@ -88,8 +90,19 @@ describe('project validations', () => {
 			expect(result.success).toBe(false);
 		});
 
+		it('requires valid clientId UUID', () => {
+			const result = createProjectSchema.safeParse({
+				clientId: 'not-a-uuid',
+				title: 'Project',
+				invoiceStatus: 'for_invoice',
+				paymentStatus: 'not_paid'
+			});
+			expect(result.success).toBe(false);
+		});
+
 		it('defaults totalAmount to 0', () => {
 			const result = createProjectSchema.safeParse({
+				clientId: '550e8400-e29b-41d4-a716-446655440000',
 				title: 'Project',
 				invoiceStatus: 'for_invoice',
 				paymentStatus: 'not_paid'
@@ -102,6 +115,7 @@ describe('project validations', () => {
 
 		it('coerces totalAmount string to number', () => {
 			const result = createProjectSchema.safeParse({
+				clientId: '550e8400-e29b-41d4-a716-446655440000',
 				title: 'Project',
 				totalAmount: '5000',
 				invoiceStatus: 'for_invoice',
@@ -115,6 +129,7 @@ describe('project validations', () => {
 
 		it('rejects negative totalAmount', () => {
 			const result = createProjectSchema.safeParse({
+				clientId: '550e8400-e29b-41d4-a716-446655440000',
 				title: 'Project',
 				totalAmount: -100,
 				invoiceStatus: 'for_invoice',
@@ -129,6 +144,7 @@ describe('payment validations', () => {
 	describe('createPaymentSchema', () => {
 		it('validates a valid payment', () => {
 			const result = createPaymentSchema.safeParse({
+				projectId: '550e8400-e29b-41d4-a716-446655440000',
 				amount: 150.5,
 				date: '2024-01-15',
 				note: 'Partial payment'
@@ -138,7 +154,17 @@ describe('payment validations', () => {
 
 		it('requires amount greater than 0', () => {
 			const result = createPaymentSchema.safeParse({
+				projectId: '550e8400-e29b-41d4-a716-446655440000',
 				amount: 0,
+				date: '2024-01-15'
+			});
+			expect(result.success).toBe(false);
+		});
+
+		it('requires valid projectId UUID', () => {
+			const result = createPaymentSchema.safeParse({
+				projectId: 'not-a-uuid',
+				amount: 100,
 				date: '2024-01-15'
 			});
 			expect(result.success).toBe(false);
@@ -146,6 +172,7 @@ describe('payment validations', () => {
 
 		it('defaults note to empty string', () => {
 			const result = createPaymentSchema.safeParse({
+				projectId: '550e8400-e29b-41d4-a716-446655440000',
 				amount: 100,
 				date: '2024-01-15'
 			});
@@ -157,6 +184,7 @@ describe('payment validations', () => {
 
 		it('coerces amount string to number', () => {
 			const result = createPaymentSchema.safeParse({
+				projectId: '550e8400-e29b-41d4-a716-446655440000',
 				amount: '250',
 				date: '2024-01-15'
 			});

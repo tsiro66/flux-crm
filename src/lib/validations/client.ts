@@ -1,18 +1,22 @@
 import { z } from 'zod/v4';
 
-export const createClientSchema = z.object({
+const clientBaseSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
 	email: z.string().email('Invalid email').or(z.literal('')),
 	phone: z.string().optional().default(''),
 	notes: z.string().optional().default('')
 });
 
-export const updateClientSchema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	email: z.string().email('Invalid email').or(z.literal('')),
-	phone: z.string().optional().default(''),
-	notes: z.string().optional().default('')
+export const createClientSchema = clientBaseSchema;
+export const updateClientSchema = clientBaseSchema;
+
+export const patchClientSchema = z.object({
+	name: z.string().min(1, 'Name is required').optional(),
+	email: z.string().email('Invalid email').or(z.literal('')).optional(),
+	phone: z.string().optional(),
+	notes: z.string().optional()
 });
 
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
+export type PatchClientInput = z.infer<typeof patchClientSchema>;

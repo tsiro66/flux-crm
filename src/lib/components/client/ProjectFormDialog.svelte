@@ -11,13 +11,14 @@
 	} from '$lib/components/ui/dialog';
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
+	import type { InvoiceStatus, PaymentStatus } from '$lib/utils';
 
 	type Project = {
 		id: string;
 		title: string;
 		totalAmount: number;
-		invoiceStatus: string;
-		paymentStatus: string;
+		invoiceStatus: InvoiceStatus;
+		paymentStatus: PaymentStatus;
 		date: Date | null;
 	};
 

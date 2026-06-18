@@ -25,7 +25,7 @@ export const DELETE: RequestHandler = async ({ locals, params }) => {
 	if (!file) return notFound('File');
 
 	await deleteStorageFile(file.storagePath);
-	await deleteFileRecord(file.id);
+	await deleteFileRecord(locals.user.id, file.id);
 
 	return json({ success: true });
 };

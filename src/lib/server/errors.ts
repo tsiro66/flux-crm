@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { ZodError } from 'zod';
+import type { ZodError } from 'zod/v4';
 
 export class ApiError extends Error {
 	constructor(

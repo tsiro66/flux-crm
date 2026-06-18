@@ -17,6 +17,10 @@
 		{ href: '/chat', label: 'Chat', icon: MessageCircle }
 	] as const;
 
+	function isActive(href: string, pathname: string): boolean {
+		return pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'));
+	}
+
 	async function handleLogout() {
 		await supabaseBrowserClient.auth.signOut();
 		goto('/login');
@@ -32,10 +36,12 @@
 			{#each navItems as item (item.href)}
 				<a
 					href={item.href}
-					class="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-					class:font-medium={$page.url.pathname.startsWith(item.href)
-						? 'text-foreground bg-muted'
-						: ''}
+					class="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors hover:bg-muted hover:text-foreground {isActive(
+						item.href,
+						$page.url.pathname
+					)
+						? 'bg-muted font-medium text-foreground'
+						: 'text-muted-foreground'}"
 				>
 					<item.icon class="h-4 w-4" />
 					{item.label}

@@ -14,10 +14,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		return handleZodError(parsed.error);
 	}
 
-	const payment = await createPayment(locals.user.id, {
-		...parsed.data,
-		projectId: body.projectId
-	});
+	const payment = await createPayment(locals.user.id, parsed.data);
 	if (!payment) return notFound('Project');
 
 	return json(payment, { status: 201 });

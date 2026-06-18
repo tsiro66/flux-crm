@@ -19,7 +19,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let search = $state('');
+	let search = $state(data.search);
 	let showCreateDialog = $state(false);
 	let createForm = $state({ name: '', email: '', phone: '', notes: '' });
 	let createError = $state('');
@@ -29,11 +29,7 @@
 	let sortDir = $state<'asc' | 'desc'>('asc');
 
 	let filteredClients = $derived(() => {
-		let list = data.clients.filter(
-			(c) =>
-				c.name.toLowerCase().includes(search.toLowerCase()) ||
-				(c.email || '').toLowerCase().includes(search.toLowerCase())
-		);
+		let list = [...data.clients];
 		list.sort((a, b) => {
 			let cmp = 0;
 			if (sortField === 'name') cmp = a.name.localeCompare(b.name);
@@ -54,8 +50,12 @@
 		}
 	}
 
+	function handleSearch() {
+		goto(`/clients?search=${encodeURIComponent(search)}&page=1`);
+	}
+
 	function handlePageChange(page: number) {
-		goto(`/clients?page=${page}`);
+		goto(`/clients?search=${encodeURIComponent(data.search)}&page=${page}`);
 	}
 
 	async function handleCreate(e: Event) {
@@ -96,19 +96,21 @@
 
 	<div class="relative mb-4">
 		<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-		<Input
-			type="text"
-			placeholder="Search by name or email..."
-			value={search}
-			oninput={(e) => (search = (e.target as HTMLInputElement).value)}
-			class="pl-9"
-		/>
+		<form onsubmit={handleSearch}>
+			<Input
+				type="text"
+				placeholder="Search by name or email..."
+				value={search}
+				oninput={(e) => (search = (e.target as HTMLInputElement).value)}
+				class="pl-9"
+			/>
+		</form>
 	</div>
 
 	{#if filteredClients().length === 0}
 		<div class="py-16 text-center">
 			<p class="text-sm text-muted-foreground">
-				{search
+				{data.search
 					? 'No clients match your search.'
 					: 'No clients yet. Add your first client to get started.'}
 			</p>

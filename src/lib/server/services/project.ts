@@ -2,11 +2,16 @@ import { db } from '$lib/server/db';
 import { projects } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { toCents } from '$lib/utils/formatters';
-import type { z } from 'zod';
-import type { createProjectSchema, updateProjectSchema } from '$lib/validations';
+import type { z } from 'zod/v4';
+import type {
+	createProjectSchema,
+	updateProjectSchema,
+	updateProjectStatusSchema
+} from '$lib/validations';
 
-type CreateProjectInput = z.infer<typeof createProjectSchema> & { clientId: string };
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
 type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+type UpdateProjectStatusInput = z.infer<typeof updateProjectStatusSchema>;
 
 export function derivePaymentStatus(paidAmount: number, totalAmount: number) {
 	if (paidAmount >= totalAmount) return 'paid' as const;
@@ -41,21 +46,36 @@ export async function updateProject(userId: string, id: string, data: UpdateProj
 			title: data.title,
 			totalAmount: totalAmountCents,
 			invoiceStatus: data.invoiceStatus,
-			paymentStatus: data.paymentStatus,
 			date: data.date ? new Date(data.date) : new Date(),
 			updatedAt: new Date()
 		})
 		.where(and(eq(projects.id, id), eq(projects.userId, userId)))
 		.returning();
-	return updated ?? null;
+
+	if (!updated) return null;
+
+	const paymentStatus = derivePaymentStatus(updated.paidAmount, updated.totalAmount);
+	if (paymentStatus !== updated.paymentStatus) {
+		await db
+			.update(projects)
+			.set({ paymentStatus, updatedAt: new Date() })
+			.where(eq(projects.id, id));
+		updated.paymentStatus = paymentStatus;
+	}
+
+	return updated;
 }
 
 export async function updateProjectStatus(
 	userId: string,
 	id: string,
-	data: { invoiceStatus?: string; paymentStatus?: string }
+	data: UpdateProjectStatusInput
 ) {
-	const updateData: Record<string, string | Date> = { updatedAt: new Date() };
+	const updateData: Partial<
+		Pick<typeof projects.$inferInsert, 'invoiceStatus' | 'paymentStatus'>
+	> & { updatedAt: Date } = {
+		updatedAt: new Date()
+	};
 	if (data.invoiceStatus) updateData.invoiceStatus = data.invoiceStatus;
 	if (data.paymentStatus) updateData.paymentStatus = data.paymentStatus;
 

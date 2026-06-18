@@ -1,3 +1,5 @@
+// Global toast state — module-level $state creates a singleton that persists across route changes,
+// which is the intended behavior for toasts that should survive navigation.
 type ToastType = 'success' | 'error' | 'info';
 
 type Toast = {

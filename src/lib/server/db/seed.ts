@@ -1,3 +1,5 @@
+// Development seed script — all data is owned by a single hardcoded user ID.
+// This is intentional for local development only. Do not use in production.
 import 'dotenv/config';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -50,7 +52,7 @@ async function seed() {
 		])
 		.returning();
 
-	const [project1, project2, project3, project4, project5, , project7] = await db
+	const projects = await db
 		.insert(schema.projects)
 		.values([
 			{
@@ -121,56 +123,56 @@ async function seed() {
 
 	await db.insert(schema.payments).values([
 		{
-			projectId: project1.id,
+			projectId: projects[0].id,
 			amount: 5000,
 			date: new Date('2025-01-15'),
 			note: 'First milestone payment',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project1.id,
+			projectId: projects[0].id,
 			amount: 5000,
 			date: new Date('2025-03-01'),
 			note: 'Second milestone payment',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project2.id,
+			projectId: projects[1].id,
 			amount: 5000,
 			date: new Date('2025-02-01'),
 			note: 'Deposit',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project3.id,
+			projectId: projects[2].id,
 			amount: 8000,
 			date: new Date('2025-02-20'),
 			note: 'Full payment received',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project4.id,
+			projectId: projects[3].id,
 			amount: 16000,
 			date: new Date('2025-03-10'),
 			note: 'Phase 1 payment',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project5.id,
+			projectId: projects[4].id,
 			amount: 11000,
 			date: new Date('2025-04-01'),
 			note: 'First installment',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project5.id,
+			projectId: projects[4].id,
 			amount: 11000,
 			date: new Date('2025-05-01'),
 			note: 'Final installment',
 			userId: '00000000-0000-0000-0000-000000000001'
 		},
 		{
-			projectId: project7.id,
+			projectId: projects[6].id,
 			amount: 6000,
 			date: new Date('2025-01-01'),
 			note: 'Q1 retainer paid',

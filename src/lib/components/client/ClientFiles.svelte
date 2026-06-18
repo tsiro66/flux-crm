@@ -76,7 +76,7 @@
 				return;
 			}
 
-			await fetch('/api/files', {
+			const fileRes = await fetch('/api/files', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -86,6 +86,13 @@
 					fileType: file.type
 				})
 			});
+
+			if (!fileRes.ok) {
+				uploadError = 'Failed to save file record';
+				uploadLoading = false;
+				toastError('Failed to save file record');
+				return;
+			}
 
 			showUploadDialog = false;
 			toastSuccess('File uploaded');
@@ -107,11 +114,15 @@
 
 	async function handleDeleteFile() {
 		deleteFileLoading = true;
-		await fetch(`/api/files/${deleteFileId}`, { method: 'DELETE' });
+		const res = await fetch(`/api/files/${deleteFileId}`, { method: 'DELETE' });
 		deleteFileLoading = false;
 		deleteFileDialog = false;
-		toastSuccess('File deleted');
-		invalidateAll();
+		if (res.ok) {
+			toastSuccess('File deleted');
+			invalidateAll();
+		} else {
+			toastError('Failed to delete file');
+		}
 	}
 </script>
 

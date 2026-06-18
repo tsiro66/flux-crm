@@ -1,29 +1,36 @@
 import { db } from '$lib/server/db';
 import { clients, projects, files } from '$lib/server/db/schema';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, ilike, and, or } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	if (!locals.user)
+	if (!locals.user) {
 		return {
 			clients: [],
 			projectsByClient: {},
 			filesByClient: {},
 			total: 0,
 			page: 1,
-			totalPages: 1
+			totalPages: 1,
+			search: ''
 		};
+	}
 
 	const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 	const limit = 20;
 	const offset = (page - 1) * limit;
+	const search = url.searchParams.get('search') || '';
 
 	const userId = locals.user.id;
 
-	const [countResult] = await db
-		.select({ total: count() })
-		.from(clients)
-		.where(eq(clients.userId, userId));
+	const whereCondition = search
+		? and(
+				eq(clients.userId, userId),
+				or(ilike(clients.name, `%${search}%`), ilike(clients.email, `%${search}%`))
+			)
+		: eq(clients.userId, userId);
+
+	const [countResult] = await db.select({ total: count() }).from(clients).where(whereCondition);
 
 	const total = Number(countResult.total);
 	const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -31,7 +38,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const clientList = await db
 		.select()
 		.from(clients)
-		.where(eq(clients.userId, userId))
+		.where(whereCondition)
 		.orderBy(clients.createdAt)
 		.limit(limit)
 		.offset(offset);
@@ -43,27 +50,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	if (clientIds.length > 0) {
 		const projectCounts = await db
-			.select({ clientId: projects.clientId, count: projects.id })
+			.select({ clientId: projects.clientId, count: count() })
 			.from(projects)
 			.where(eq(projects.userId, userId))
-			.groupBy(projects.clientId, projects.id);
+			.groupBy(projects.clientId);
 
-		const projectCountMap = new Map<string, number>();
-		for (const p of projectCounts) {
-			projectCountMap.set(p.clientId, (projectCountMap.get(p.clientId) || 0) + 1);
-		}
-		projectsByClient = Object.fromEntries(projectCountMap);
+		projectsByClient = Object.fromEntries(projectCounts.map((p) => [p.clientId, Number(p.count)]));
 
 		const fileCounts = await db
-			.select({ clientId: files.clientId, count: files.id })
+			.select({ clientId: files.clientId, count: count() })
 			.from(files)
-			.groupBy(files.clientId, files.id);
+			.where(eq(files.userId, userId))
+			.groupBy(files.clientId);
 
-		const fileCountMap = new Map<string, number>();
-		for (const f of fileCounts) {
-			fileCountMap.set(f.clientId, (fileCountMap.get(f.clientId) || 0) + 1);
-		}
-		filesByClient = Object.fromEntries(fileCountMap);
+		filesByClient = Object.fromEntries(fileCounts.map((f) => [f.clientId, Number(f.count)]));
 	}
 
 	return {
@@ -72,6 +72,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		filesByClient,
 		total,
 		page,
-		totalPages
+		totalPages,
+		search
 	};
 };

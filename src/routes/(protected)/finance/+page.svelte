@@ -119,6 +119,22 @@
 										{/if}
 									</Badge>
 								</div>
+								{#if project.totalAmount > 0}
+									<div class="mt-1.5 pl-5.5">
+										<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+											<div
+												class="h-full rounded-full bg-green-600 transition-all"
+												style="width: {Math.min(
+													(project.paidAmount / project.totalAmount) * 100,
+													100
+												)}%"
+											></div>
+										</div>
+										<div class="mt-0.5 text-xs text-muted-foreground">
+											{formatCurrency(project.paidAmount)} / {formatCurrency(project.totalAmount)}
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
@@ -177,11 +193,20 @@
 										{/if}
 									</Badge>
 								</div>
-								{#if project.paidAmount > 0}
-									<div class="mt-1 pl-5.5 text-xs text-muted-foreground">
-										Paid: {formatCurrency(project.paidAmount)} / {formatCurrency(
-											project.totalAmount
-										)}
+								{#if project.totalAmount > 0}
+									<div class="mt-1.5 pl-5.5">
+										<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+											<div
+												class="h-full rounded-full bg-green-600 transition-all"
+												style="width: {Math.min(
+													(project.paidAmount / project.totalAmount) * 100,
+													100
+												)}%"
+											></div>
+										</div>
+										<div class="mt-0.5 text-xs text-muted-foreground">
+											{formatCurrency(project.paidAmount)} / {formatCurrency(project.totalAmount)}
+										</div>
 									</div>
 								{/if}
 							</div>

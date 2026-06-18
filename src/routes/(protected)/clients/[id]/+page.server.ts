@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { clients, projects, files } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { clients, projects, files, payments } from '$lib/server/db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -20,11 +20,38 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		.where(and(eq(projects.clientId, params.id), eq(projects.userId, locals.user.id)))
 		.orderBy(projects.createdAt);
 
-	const clientFiles = await db.select().from(files).where(eq(files.clientId, params.id));
+	const clientFiles = await db
+		.select()
+		.from(files)
+		.where(and(eq(files.clientId, params.id), eq(files.userId, locals.user.id)));
+
+	let projectPayments: { projectId: string; payments: (typeof payments.$inferSelect)[] }[] = [];
+
+	if (clientProjects.length > 0) {
+		const projectIds = clientProjects.map((p) => p.id);
+		const allPayments = await db
+			.select()
+			.from(payments)
+			.where(and(inArray(payments.projectId, projectIds), eq(payments.userId, locals.user.id)))
+			.orderBy(payments.createdAt);
+
+		const paymentsByProject = new Map<string, (typeof payments.$inferSelect)[]>();
+		for (const payment of allPayments) {
+			const existing = paymentsByProject.get(payment.projectId) || [];
+			existing.push(payment);
+			paymentsByProject.set(payment.projectId, existing);
+		}
+
+		projectPayments = clientProjects.map((p) => ({
+			projectId: p.id,
+			payments: paymentsByProject.get(p.id) || []
+		}));
+	}
 
 	return {
 		client,
 		projects: clientProjects,
-		files: clientFiles
+		files: clientFiles,
+		projectPayments
 	};
 };
