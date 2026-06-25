@@ -1,9 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 const BUCKET_ID = 'client-files';
 
-const supabaseAdmin: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+let _admin: SupabaseClient | null = null;
+function supabaseAdmin(): SupabaseClient {
+	if (!_admin) {
+		_admin = createClient(env.SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY!);
+	}
+	return _admin;
+}
 
 let bucketEnsured: Promise<void> | null = null;
 
@@ -35,11 +41,11 @@ export function generateStoragePath(userId: string, clientId: string, filename: 
 }
 
 export async function generateUploadUrl(userId: string, clientId: string, filename: string) {
-	await ensureBucket(supabaseAdmin);
+	await ensureBucket(supabaseAdmin());
 
 	const storagePath = generateStoragePath(userId, clientId, filename);
 
-	const { data, error } = await supabaseAdmin.storage
+	const { data, error } = await supabaseAdmin().storage
 		.from(BUCKET_ID)
 		.createSignedUploadUrl(storagePath);
 
@@ -52,7 +58,7 @@ export async function generateUploadUrl(userId: string, clientId: string, filena
 }
 
 export async function generateDownloadUrl(storagePath: string) {
-	const { data, error } = await supabaseAdmin.storage
+	const { data, error } = await supabaseAdmin().storage
 		.from(BUCKET_ID)
 		.createSignedUrl(storagePath, 3600);
 
@@ -64,5 +70,5 @@ export async function generateDownloadUrl(storagePath: string) {
 }
 
 export async function deleteStorageFile(storagePath: string) {
-	await supabaseAdmin.storage.from(BUCKET_ID).remove([storagePath]);
+	await supabaseAdmin().storage.from(BUCKET_ID).remove([storagePath]);
 }

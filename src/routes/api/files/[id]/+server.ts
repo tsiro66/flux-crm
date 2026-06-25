@@ -7,10 +7,10 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ locals, params }) => {
 	if (!locals.user) return unauthorized();
 
-	const file = await getFileById(locals.user.id, params.id);
-	if (!file) return notFound('File');
-
 	try {
+		const file = await getFileById(locals.user.id, params.id);
+		if (!file) return notFound('File');
+
 		const url = await generateDownloadUrl(file.storagePath);
 		return json({ url, filename: file.filename, fileType: file.fileType });
 	} catch (error) {
@@ -21,11 +21,15 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 export const DELETE: RequestHandler = async ({ locals, params }) => {
 	if (!locals.user) return unauthorized();
 
-	const file = await getFileById(locals.user.id, params.id);
-	if (!file) return notFound('File');
+	try {
+		const file = await getFileById(locals.user.id, params.id);
+		if (!file) return notFound('File');
 
-	await deleteStorageFile(file.storagePath);
-	await deleteFileRecord(locals.user.id, file.id);
+		await deleteStorageFile(file.storagePath);
+		await deleteFileRecord(locals.user.id, file.id);
 
-	return json({ success: true });
+		return json({ success: true });
+	} catch (error) {
+		return handleApiError(error);
+	}
 };

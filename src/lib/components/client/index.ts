@@ -6,3 +6,5 @@ export { default as EditClientDialog } from './EditClientDialog.svelte';
 export { default as DeleteConfirmDialog } from './DeleteConfirmDialog.svelte';
 export { default as ProjectFormDialog } from './ProjectFormDialog.svelte';
 export { default as PaymentDialog } from './PaymentDialog.svelte';
+export { default as ImportDialog } from './ImportDialog.svelte';
+export { default as ExportDialog } from './ExportDialog.svelte';

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { updateProjectStatus } from '$lib/server/services';
 import { updateProjectStatusSchema } from '$lib/validations';
-import { unauthorized, notFound, handleZodError } from '$lib/server/errors';
+import { unauthorized, notFound, handleZodError, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const PATCH: RequestHandler = async ({ locals, params, request }) => {
@@ -14,8 +14,12 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 		return handleZodError(parsed.error);
 	}
 
-	const updated = await updateProjectStatus(locals.user.id, params.id, parsed.data);
-	if (!updated) return notFound('Project');
+	try {
+		const updated = await updateProjectStatus(locals.user.id, params.id, parsed.data);
+		if (!updated) return notFound('Project');
 
-	return json(updated);
+		return json(updated);
+	} catch (error) {
+		return handleApiError(error);
+	}
 };

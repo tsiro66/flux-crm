@@ -1,0 +1,25 @@
+app = "flux-web"
+primary_region = "fra"
+
+[build]
+
+[build.args]
+PUBLIC_SUPABASE_URL = "https://mmjouzxiwpvmvwoaicsz.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tam91enhpd3B2bXZ3b2FpY3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjQ4MzksImV4cCI6MjA5NzgwMDgzOX0.-AjBoPeW4P3kaX-rqF_PQQY88kLzcLSv4WpyAd849cY"
+PUBLIC_FLUE_URL = "https://flux-flue.fly.dev"
+
+[env]
+PORT = "3000"
+ORIGIN = "https://flux-web.fly.dev"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+
+[[vm]]
+memory = "512mb"
+cpu_kind = "shared"
+cpus = 1

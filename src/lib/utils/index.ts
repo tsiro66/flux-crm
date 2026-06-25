@@ -8,3 +8,4 @@ export {
 	type InvoiceStatus,
 	type PaymentStatus
 } from './status';
+export { stripTags, renderMarkdown } from './chat';

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createClientSchema, updateClientSchema } from '$lib/validations/client';
 import { createProjectSchema } from '$lib/validations/project';
 import { createPaymentSchema } from '$lib/validations/payment';
+import { importClientRowSchema, importProjectRowSchema } from '$lib/validations/import';
 
 describe('client validations', () => {
 	describe('createClientSchema', () => {
@@ -191,6 +192,124 @@ describe('payment validations', () => {
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.data.amount).toBe(250);
+			}
+		});
+	});
+});
+
+describe('import validations', () => {
+	describe('importClientRowSchema', () => {
+		it('validates a valid client row', () => {
+			const result = importClientRowSchema.safeParse({
+				name: 'Acme Corp',
+				email: 'acme@example.com',
+				phone: '123-456',
+				notes: 'note'
+			});
+			expect(result.success).toBe(true);
+		});
+
+		it('requires name', () => {
+			const result = importClientRowSchema.safeParse({ name: '', email: 'a@b.com' });
+			expect(result.success).toBe(false);
+		});
+
+		it('allows empty email', () => {
+			const result = importClientRowSchema.safeParse({ name: 'Acme', email: '' });
+			expect(result.success).toBe(true);
+		});
+
+		it('rejects invalid email', () => {
+			const result = importClientRowSchema.safeParse({ name: 'Acme', email: 'nope' });
+			expect(result.success).toBe(false);
+		});
+
+		it('defaults optional fields', () => {
+			const result = importClientRowSchema.safeParse({ name: 'Acme' });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.email).toBe('');
+				expect(result.data.phone).toBe('');
+				expect(result.data.notes).toBe('');
+			}
+		});
+	});
+
+	describe('importProjectRowSchema', () => {
+		it('validates a valid project row', () => {
+			const result = importProjectRowSchema.safeParse({
+				clientEmail: 'acme@example.com',
+				title: 'Site',
+				totalAmount: '5000',
+				paidAmount: '2000',
+				invoiceStatus: 'Invoiced',
+				paymentStatus: 'partial_payment',
+				date: '2024-01-15'
+			});
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.invoiceStatus).toBe('invoiced');
+				expect(result.data.paymentStatus).toBe('partial_payment');
+				expect(result.data.totalAmount).toBe(5000);
+				expect(result.data.paidAmount).toBe(2000);
+			}
+		});
+
+		it('lowercases uppercase enum values', () => {
+			const result = importProjectRowSchema.safeParse({
+				clientName: 'Acme',
+				title: 'Site',
+				invoiceStatus: 'INVOICED',
+				paymentStatus: 'PAID'
+			});
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.invoiceStatus).toBe('invoiced');
+				expect(result.data.paymentStatus).toBe('paid');
+			}
+		});
+
+		it('accepts clientName when clientEmail is absent', () => {
+			const result = importProjectRowSchema.safeParse({ clientName: 'Acme', title: 'Site' });
+			expect(result.success).toBe(true);
+		});
+
+		it('requires either clientEmail or clientName', () => {
+			const result = importProjectRowSchema.safeParse({ title: 'Site' });
+			expect(result.success).toBe(false);
+		});
+
+		it('requires title', () => {
+			const result = importProjectRowSchema.safeParse({ clientName: 'Acme', title: '' });
+			expect(result.success).toBe(false);
+		});
+
+		it('rejects invalid enum value', () => {
+			const result = importProjectRowSchema.safeParse({
+				clientName: 'Acme',
+				title: 'Site',
+				invoiceStatus: 'unknown'
+			});
+			expect(result.success).toBe(false);
+		});
+
+		it('rejects negative amounts', () => {
+			const result = importProjectRowSchema.safeParse({
+				clientName: 'Acme',
+				title: 'Site',
+				totalAmount: -100
+			});
+			expect(result.success).toBe(false);
+		});
+
+		it('defaults amounts and statuses', () => {
+			const result = importProjectRowSchema.safeParse({ clientName: 'Acme', title: 'Site' });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.totalAmount).toBe(0);
+				expect(result.data.paidAmount).toBe(0);
+				expect(result.data.invoiceStatus).toBe('for_invoice');
+				expect(result.data.paymentStatus).toBe('not_paid');
 			}
 		});
 	});

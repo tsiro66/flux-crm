@@ -1,21 +1,13 @@
 allowBuilds:
-  '"': true
   '@google/genai': true
   '@mongodb-js/zstd': true
-  '[': true
-  ']': true
-  b: true
-  d: true
-  e: true
   esbuild: true
-  i: true
-  l: true
-  msw: set this to true or false
   node-liblzma: true
   protobufjs: true
-  s: true
   sharp: true
-  u: true
   workerd: true
-
-onlyBuiltDependencies: '["esbuild"]'
+minimumReleaseAgeExclude:
+  - '@sveltejs/adapter-node@5.5.6'
+  - '@sveltejs/kit@2.67.0'
+onlyBuiltDependencies:
+  - esbuild

@@ -4,3 +4,7 @@ export { createProjectSchema, updateProjectSchema, updateProjectStatusSchema } f
 export type { CreateProjectInput, UpdateProjectInput, UpdateProjectStatusInput } from './project';
 export { createPaymentSchema, updatePaymentSchema } from './payment';
 export type { CreatePaymentInput, UpdatePaymentInput } from './payment';
+export { createFileSchema } from './file';
+export type { CreateFileInput } from './file';
+export { importClientRowSchema, importProjectRowSchema } from './import';
+export type { ImportClientRowInput, ImportProjectRowInput } from './import';

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Chart as ChartType } from 'chart.js';
 	import type { PageData } from './$types';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { DollarSign, Clock, FolderOpen, Users } from '@lucide/svelte';
 	import { formatCurrency } from '$lib/utils';
 
@@ -9,6 +9,7 @@
 
 	let canvasEl: HTMLCanvasElement;
 	let chartInstance: ChartType | null = null;
+	let chartModule: typeof import('chart.js') | null = null;
 
 	const stats = $derived([
 		{
@@ -33,11 +34,15 @@
 		}
 	]);
 
-	onMount(async () => {
-		const { Chart, registerables } = await import('chart.js');
-		Chart.register(...registerables);
-
-		if (chartInstance) chartInstance.destroy();
+	async function ensureChart() {
+		if (!chartModule) {
+			chartModule = await import('chart.js');
+			chartModule.Chart.register(...chartModule.registerables);
+		}
+		if (chartInstance) {
+			chartInstance.destroy();
+		}
+		if (!canvasEl) return;
 
 		const labels = data.monthlyRevenue.map((m) => m.month);
 		const values = data.monthlyRevenue.map((m) => m.revenue / 100);
@@ -45,7 +50,7 @@
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 
-		chartInstance = new Chart(ctx, {
+		chartInstance = new chartModule.Chart(ctx, {
 			type: 'bar',
 			data: {
 				labels: labels.length > 0 ? labels : ['No data'],
@@ -94,6 +99,21 @@
 				}
 			}
 		});
+	}
+
+	onMount(() => {
+		ensureChart();
+	});
+
+	$effect(() => {
+		void data.monthlyRevenue;
+		if (chartInstance) {
+			ensureChart();
+		}
+	});
+
+	onDestroy(() => {
+		if (chartInstance) chartInstance.destroy();
 	});
 </script>
 

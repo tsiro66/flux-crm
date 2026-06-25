@@ -15,12 +15,16 @@
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
-	import { Search, Plus, FolderOpen } from '@lucide/svelte';
+	import { ImportDialog, ExportDialog } from '$lib/components/client';
+	import { Search, Plus, FolderOpen, Upload, Download } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
+	// svelte-ignore state_referenced_locally
 	let search = $state(data.search);
 	let showCreateDialog = $state(false);
+	let showImportDialog = $state(false);
+	let showExportDialog = $state(false);
 	let createForm = $state({ name: '', email: '', phone: '', notes: '' });
 	let createError = $state('');
 	let createLoading = $state(false);
@@ -28,7 +32,7 @@
 	let sortField = $state<'name' | 'email' | 'projects'>('name');
 	let sortDir = $state<'asc' | 'desc'>('asc');
 
-	let filteredClients = $derived(() => {
+	let filteredClients = $derived.by(() => {
 		let list = [...data.clients];
 		list.sort((a, b) => {
 			let cmp = 0;
@@ -88,10 +92,20 @@
 <div class="p-8">
 	<div class="mb-8 flex items-center justify-between">
 		<h1 class="text-2xl font-semibold tracking-tight">Clients</h1>
-		<Button onclick={() => (showCreateDialog = true)} class="gap-2">
-			<Plus class="h-4 w-4" />
-			Add Client
-		</Button>
+		<div class="flex items-center gap-2">
+			<Button variant="outline" onclick={() => (showImportDialog = true)} class="gap-2">
+				<Upload class="h-4 w-4" />
+				Import
+			</Button>
+			<Button variant="outline" onclick={() => (showExportDialog = true)} class="gap-2">
+				<Download class="h-4 w-4" />
+				Export
+			</Button>
+			<Button onclick={() => (showCreateDialog = true)} class="gap-2">
+				<Plus class="h-4 w-4" />
+				Add Client
+			</Button>
+		</div>
 	</div>
 
 	<div class="relative mb-4">
@@ -107,7 +121,7 @@
 		</form>
 	</div>
 
-	{#if filteredClients().length === 0}
+	{#if filteredClients.length === 0}
 		<div class="py-16 text-center">
 			<p class="text-sm text-muted-foreground">
 				{data.search
@@ -146,7 +160,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each filteredClients() as client (client.id)}
+					{#each filteredClients as client (client.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
 							onclick={() => (window.location.href = `/clients/${client.id}`)}
@@ -231,3 +245,6 @@
 		</form>
 	</DialogContent>
 </Dialog>
+
+<ImportDialog bind:open={showImportDialog} />
+<ExportDialog bind:open={showExportDialog} />

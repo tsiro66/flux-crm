@@ -1,0 +1,12 @@
+.git
+.svelte-kit
+node_modules
+build
+dist
+.flue/dist
+.env
+.env.*
+*.log
+.DS_Store
+README.md
+.fly

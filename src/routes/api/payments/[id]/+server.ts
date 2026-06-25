@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { deletePayment, updatePayment } from '$lib/server/services';
 import { updatePaymentSchema } from '$lib/validations';
-import { unauthorized, notFound, handleZodError } from '$lib/server/errors';
+import { unauthorized, notFound, handleZodError, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const PUT: RequestHandler = async ({ locals, params, request }) => {
@@ -14,17 +14,25 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 		return handleZodError(parsed.error);
 	}
 
-	const payment = await updatePayment(locals.user.id, params.id, parsed.data);
-	if (!payment) return notFound('Payment');
+	try {
+		const payment = await updatePayment(locals.user.id, params.id, parsed.data);
+		if (!payment) return notFound('Payment');
 
-	return json(payment);
+		return json(payment);
+	} catch (error) {
+		return handleApiError(error);
+	}
 };
 
 export const DELETE: RequestHandler = async ({ locals, params }) => {
 	if (!locals.user) return unauthorized();
 
-	const deleted = await deletePayment(locals.user.id, params.id);
-	if (!deleted) return notFound('Payment');
+	try {
+		const deleted = await deletePayment(locals.user.id, params.id);
+		if (!deleted) return notFound('Payment');
 
-	return json({ success: true });
+		return json({ success: true });
+	} catch (error) {
+		return handleApiError(error);
+	}
 };

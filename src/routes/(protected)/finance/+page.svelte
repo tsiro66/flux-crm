@@ -2,6 +2,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { formatCurrency, invoiceStatusVariants, paymentStatusVariants } from '$lib/utils';
 	import { invalidateAll } from '$app/navigation';
+	import { toastError } from '$lib/stores/toast.svelte';
 	import type { PageData } from './$types';
 	import { GripVertical } from '@lucide/svelte';
 
@@ -38,26 +39,32 @@
 	async function handleDropInvoice(status: string) {
 		if (!draggedProjectId) return;
 
-		await fetch(`/api/projects/${draggedProjectId}/status`, {
+		const res = await fetch(`/api/projects/${draggedProjectId}/status`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ invoiceStatus: status })
 		});
 
 		draggedProjectId = null;
+		if (!res.ok) {
+			toastError('Failed to update invoice status');
+		}
 		invalidateAll();
 	}
 
 	async function handleDropPayment(status: string) {
 		if (!draggedProjectId) return;
 
-		await fetch(`/api/projects/${draggedProjectId}/status`, {
+		const res = await fetch(`/api/projects/${draggedProjectId}/status`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ paymentStatus: status })
 		});
 
 		draggedProjectId = null;
+		if (!res.ok) {
+			toastError('Failed to update payment status');
+		}
 		invalidateAll();
 	}
 

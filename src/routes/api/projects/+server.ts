@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createProject } from '$lib/server/services';
 import { createProjectSchema } from '$lib/validations';
-import { unauthorized, handleZodError } from '$lib/server/errors';
+import { unauthorized, handleZodError, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
@@ -14,6 +14,10 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		return handleZodError(parsed.error);
 	}
 
-	const project = await createProject(locals.user.id, parsed.data);
-	return json(project, { status: 201 });
+	try {
+		const project = await createProject(locals.user.id, parsed.data);
+		return json(project, { status: 201 });
+	} catch (error) {
+		return handleApiError(error);
+	}
 };
