@@ -1,12 +1,20 @@
 import { db } from '$lib/server/db';
 import { files } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 export async function listFilesByClient(userId: string, clientId: string) {
 	return db
 		.select()
 		.from(files)
 		.where(and(eq(files.clientId, clientId), eq(files.userId, userId)));
+}
+
+export async function listFilesByClients(userId: string, clientIds: string[]) {
+	if (clientIds.length === 0) return [];
+	return db
+		.select()
+		.from(files)
+		.where(and(inArray(files.clientId, clientIds), eq(files.userId, userId)));
 }
 
 export async function createFile(

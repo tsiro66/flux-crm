@@ -1,8 +1,8 @@
 import { db } from '$lib/server/db';
 import { clients } from '$lib/server/db/schema';
 import { escapeLike, likePattern } from '$lib/server/db/like';
-import { eq, and, ilike, or } from 'drizzle-orm';
-import { listFilesByClient } from './file';
+import { eq, and, ilike, or, inArray } from 'drizzle-orm';
+import { listFilesByClient, listFilesByClients } from './file';
 import { deleteStorageFile } from './storage';
 import type { z } from 'zod/v4';
 import type {
@@ -175,4 +175,24 @@ export async function deleteClient(userId: string, id: string) {
 		.where(and(eq(clients.id, id), eq(clients.userId, userId)))
 		.returning();
 	return deleted ?? null;
+}
+
+export async function deleteClients(userId: string, ids: string[]) {
+	const uniqueIds = [...new Set(ids.filter(Boolean))];
+	if (uniqueIds.length === 0) return [];
+
+	// Clean up storage blobs first (same rationale as deleteClient). The files
+	// rows cascade-delete with the clients, but Supabase Storage objects don't.
+	const clientFiles = await listFilesByClients(userId, uniqueIds);
+	await Promise.all(
+		clientFiles.map((f) => deleteStorageFile(f.storagePath).catch(() => undefined))
+	);
+
+	// Scope the delete to the caller so a forged id list can't touch another
+	// tenant's rows. inArray + userId filter = belt-and-suspenders.
+	const deleted = await db
+		.delete(clients)
+		.where(and(inArray(clients.id, uniqueIds), eq(clients.userId, userId)))
+		.returning({ id: clients.id });
+	return deleted.map((r) => r.id);
 }

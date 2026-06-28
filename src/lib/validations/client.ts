@@ -17,6 +17,11 @@ export const patchClientSchema = z.object({
 	notes: z.string().optional()
 });
 
+export const bulkDeleteClientsSchema = z.object({
+	ids: z.array(z.string().uuid('Invalid client ID')).min(1, 'At least one id is required').max(500, 'Too many ids')
+});
+
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type PatchClientInput = z.infer<typeof patchClientSchema>;
+export type BulkDeleteClientsInput = z.infer<typeof bulkDeleteClientsSchema>;

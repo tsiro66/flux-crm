@@ -15,8 +15,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
-	import { ImportDialog, ExportDialog } from '$lib/components/client';
-	import { Search, Plus, FolderOpen, Upload, Download } from '@lucide/svelte';
+	import { ImportDialog, ExportDialog, DeleteConfirmDialog } from '$lib/components/client';
+	import { Search, Plus, FolderOpen, Upload, Download, Trash2 } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -28,6 +28,9 @@
 	let showCreateDialog = $state(false);
 	let showImportDialog = $state(false);
 	let showExportDialog = $state(false);
+	let selectedIds = $state<Set<string>>(new Set());
+	let showBulkDeleteDialog = $state(false);
+	let bulkDeleteLoading = $state(false);
 	let createForm = $state({ name: '', email: '', phone: '', notes: '' });
 	let createError = $state('');
 	let createLoading = $state(false);
@@ -67,6 +70,57 @@
 		goto(
 			`/clients?search=${encodeURIComponent(data.search)}&page=${page}&sort=${data.sortField}&dir=${data.sortDir}`
 		);
+	}
+
+	// Selection is scoped to the loaded page: navigating/searching resets it so a
+	// user can't accidentally delete rows they can no longer see.
+	$effect(() => {
+		void data.clients;
+		selectedIds = new Set();
+	});
+
+	let allOnPageSelected = $derived(
+		data.clients.length > 0 && data.clients.every((c) => selectedIds.has(c.id))
+	);
+	let someSelected = $derived(selectedIds.size > 0);
+
+	function toggleRow(clientId: string) {
+		selectedIds = new Set(selectedIds);
+		if (selectedIds.has(clientId)) selectedIds.delete(clientId);
+		else selectedIds.add(clientId);
+	}
+
+	function toggleAllOnPage() {
+		const next = new Set(selectedIds);
+		if (allOnPageSelected) {
+			for (const c of data.clients) next.delete(c.id);
+		} else {
+			for (const c of data.clients) next.add(c.id);
+		}
+		selectedIds = next;
+	}
+
+	async function handleBulkDelete() {
+		if (selectedIds.size === 0) return;
+		bulkDeleteLoading = true;
+		const ids = [...selectedIds];
+		const res = await fetch('/api/clients/bulk-delete', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ ids })
+		});
+		bulkDeleteLoading = false;
+		if (!res.ok) {
+			const err = await res.json();
+			toastError(typeof err.error === 'string' ? err.error : 'Failed to delete clients');
+			showBulkDeleteDialog = false;
+			return;
+		}
+		const { count } = await res.json();
+		showBulkDeleteDialog = false;
+		selectedIds = new Set();
+		invalidateAll();
+		toastSuccess(`Deleted ${count} client${count !== 1 ? 's' : ''}`);
 	}
 
 	async function handleCreate(e: Event) {
@@ -115,6 +169,21 @@
 		</div>
 	</div>
 
+	{#if someSelected}
+		<div class="mb-3 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5">
+			<span class="text-sm font-medium">
+				{selectedIds.size} client{selectedIds.size !== 1 ? 's' : ''} selected
+			</span>
+			<Button variant="outline" size="sm" onclick={() => (selectedIds = new Set())}>
+				Clear
+			</Button>
+			<Button variant="destructive" size="sm" class="gap-1.5" onclick={() => (showBulkDeleteDialog = true)}>
+				<Trash2 class="h-4 w-4" />
+				Delete selected
+			</Button>
+		</div>
+	{/if}
+
 	<div class="relative mb-4">
 		<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 		<form onsubmit={handleSearch}>
@@ -141,6 +210,18 @@
 			<table class="w-full">
 				<thead>
 					<tr class="border-b bg-muted/30">
+						<th class="w-10 px-4 py-3">
+							<input
+								type="checkbox"
+								class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
+								checked={allOnPageSelected}
+								indeterminate={someSelected && !allOnPageSelected}
+								onclick={toggleAllOnPage}
+								onkeydown={(e) =>
+									e.key === ' ' && (e.preventDefault(), toggleAllOnPage())}
+								aria-label="Select all on page"
+							/>
+						</th>
 						<th
 							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('name')}
@@ -172,6 +253,17 @@
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
 							onclick={() => (window.location.href = `/clients/${client.id}`)}
 						>
+							<td class="px-4 py-3" onclick={(e) => e.stopPropagation()}>
+								<input
+									type="checkbox"
+									class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
+									checked={selectedIds.has(client.id)}
+									onclick={() => toggleRow(client.id)}
+									onkeydown={(e) =>
+										e.key === ' ' && (e.preventDefault(), toggleRow(client.id))}
+									aria-label={`Select ${client.name}`}
+								/>
+							</td>
 							<td class="px-4 py-3">
 								<span class="font-medium hover:underline">{client.name}</span>
 							</td>
@@ -255,3 +347,11 @@
 
 <ImportDialog bind:open={showImportDialog} />
 <ExportDialog bind:open={showExportDialog} />
+
+<DeleteConfirmDialog
+	bind:open={showBulkDeleteDialog}
+	title="Delete {selectedIds.size} client{selectedIds.size !== 1 ? 's' : ''}?"
+	description="This will permanently delete the selected clients along with all their projects, payments, and files. This action cannot be undone."
+	loading={bulkDeleteLoading}
+	onConfirm={handleBulkDelete}
+/>
