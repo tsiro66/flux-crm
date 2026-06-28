@@ -1,10 +1,10 @@
 import { z } from 'zod/v4';
 
 export const importClientRowSchema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	email: z.string().email('Invalid email').or(z.literal('')).optional().default(''),
-	phone: z.string().optional().default(''),
-	notes: z.string().optional().default('')
+	name: z.string().trim().min(1, 'Name is required'),
+	email: z.string().trim().email('Invalid email').or(z.literal('')).optional().default(''),
+	phone: z.string().trim().optional().default(''),
+	notes: z.string().trim().optional().default('')
 });
 
 export const importProjectRowSchema = z

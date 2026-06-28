@@ -69,15 +69,16 @@ export async function upsertClientFromImport(
 	userId: string,
 	data: ImportClientRowInput
 ): Promise<{ action: 'created' | 'updated'; client: typeof clients.$inferSelect }> {
-	// Dedup by email when present, otherwise by name (case-insensitive). This
-	// prevents blank-email rows from always creating duplicates.
-	const existing =
-		(await findClientByEmail(userId, data.email)) ?? (await findClientByName(userId, data.name));
+	// Dedup by name (case-insensitive) within a tenant. Email/phone are NOT the
+	// match key: a row sharing an email/phone with a differently-named client is
+	// treated as a separate client. Only the same name updates the existing one.
+	const existing = await findClientByName(userId, data.name);
 	if (existing) {
 		const [updated] = await db
 			.update(clients)
 			.set({
 				name: data.name,
+				email: data.email || null,
 				phone: data.phone || null,
 				notes: data.notes || null,
 				updatedAt: new Date()
