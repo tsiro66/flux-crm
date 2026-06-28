@@ -1,6 +1,6 @@
 import { listAllProjectsWithClient } from '$lib/server/services';
 import { toCsv, csvResponse } from '$lib/server/csv';
-import { toDollars } from '$lib/utils/formatters';
+import { toEuros } from '$lib/utils/formatters';
 import { unauthorized, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
@@ -19,8 +19,8 @@ export const GET: RequestHandler = async ({ locals }) => {
 			clientEmail: p.clientEmail || '',
 			clientName: p.clientName,
 			title: p.title,
-			totalAmount: toDollars(p.totalAmount),
-			paidAmount: toDollars(p.paidAmount),
+			totalAmount: toEuros(p.totalAmount),
+			paidAmount: toEuros(p.paidAmount),
 			invoiceStatus: p.invoiceStatus,
 			paymentStatus: p.paymentStatus,
 			date: toDateOnly(p.date)

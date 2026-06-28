@@ -12,7 +12,7 @@ export class ApiError extends Error {
 }
 
 export function handleZodError(error: ZodError) {
-	return json({ error: error.issues }, { status: 400 });
+	return json({ error: error.issues.map((i) => i.message).join(', ') }, { status: 400 });
 }
 
 export function handleApiError(error: unknown) {
@@ -33,4 +33,8 @@ export function notFound(resource = 'Resource') {
 
 export function badRequest(message: string) {
 	return json({ error: message }, { status: 400 });
+}
+
+export function tooManyRequests(message = 'Too many requests') {
+	return json({ error: message }, { status: 429 });
 }

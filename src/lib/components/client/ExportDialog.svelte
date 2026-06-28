@@ -18,7 +18,7 @@
 			<DialogTitle>Export CSV</DialogTitle>
 		</DialogHeader>
 		<p class="text-sm text-muted-foreground">
-			Download your data as a CSV file. Amounts are in dollars.
+			Download your data as a CSV file. Amounts are in euros.
 		</p>
 		<div class="flex flex-col gap-3">
 			<a

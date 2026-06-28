@@ -5,8 +5,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import AppNav from '$lib/components/AppNav.svelte';
-	import { toastError } from '$lib/stores/toast.svelte';
+	import { ApprovalCard } from '$lib/components/chat';
+	import { toastError, toastSuccess, toastInfo } from '$lib/stores/toast.svelte';
 	import { stripTags, renderMarkdown } from '$lib/utils/chat';
+	import {
+		parseProposal,
+		executeProposal,
+		isProposalToolName,
+		type Proposal
+	} from '$lib/utils/proposals';
+	import { invalidateAll } from '$app/navigation';
 	import { PUBLIC_FLUE_URL } from '$env/static/public';
 	import type { User as SupabaseUser } from '@supabase/supabase-js';
 	import {
@@ -22,7 +30,14 @@
 		RotateCcw
 	} from '@lucide/svelte';
 
-	type Message = { role: 'user' | 'assistant'; content: string; error?: boolean };
+	type ProposalState = 'pending' | 'approved' | 'rejected' | 'failed';
+	type Message = {
+		role: 'user' | 'assistant';
+		content: string;
+		error?: boolean;
+		proposal?: Proposal | null;
+		proposalState?: ProposalState;
+	};
 	type Conversation = { id: string; title: string; createdAt: string; updatedAt: string };
 
 	let { data }: { data: { userId: string | null; user: SupabaseUser | null } } = $props();
@@ -229,6 +244,18 @@
 					toolStatus = `Using ${event.toolName.replace(/_/g, ' ')}…`;
 				} else if (event.type === 'tool_call') {
 					toolStatus = null;
+					// Capture proposal tools and attach the proposal to the last assistant
+					// message so the UI can render an approval card.
+					if (isProposalToolName(event.toolName) && !event.isError) {
+						const proposal = parseProposal(event.result);
+						if (proposal) {
+							messages[messages.length - 1] = {
+								...messages[messages.length - 1],
+								proposal,
+								proposalState: 'pending'
+							};
+						}
+					}
 				}
 			}
 
@@ -283,6 +310,33 @@
 
 	function stopStreaming() {
 		abortController?.abort();
+	}
+
+	async function approveProposal(i: number) {
+		const msg = messages[i];
+		if (!msg?.proposal || msg.proposalState !== 'pending') return;
+		messages[i] = { ...msg, proposalState: 'approved' };
+		try {
+			const res = await executeProposal(msg.proposal);
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				messages[i] = { ...messages[i], proposalState: 'failed' };
+				toastError(typeof err.error === 'string' ? err.error : 'Η ενέργεια απέτυχε');
+				return;
+			}
+			toastSuccess('Έγινε');
+			await invalidateAll();
+		} catch {
+			messages[i] = { ...messages[i], proposalState: 'failed' };
+			toastError('Σφάλμα δικτύου');
+		}
+	}
+
+	function rejectProposal(i: number) {
+		const msg = messages[i];
+		if (!msg?.proposal || msg.proposalState !== 'pending') return;
+		messages[i] = { ...msg, proposalState: 'rejected' };
+		toastInfo('Ακυρώθηκε');
 	}
 
 	function scrollToBottom() {
@@ -460,6 +514,25 @@
 										{/if}
 									</div>
 								</div>
+								{#if message.role === 'assistant' && message.proposal && message.proposalState === 'pending'}
+									<div class="pl-11">
+										<ApprovalCard
+											proposal={message.proposal}
+											onApprove={() => approveProposal(i)}
+											onReject={() => rejectProposal(i)}
+										/>
+									</div>
+								{:else if message.role === 'assistant' && message.proposal}
+									<div class="pt-1 pl-11 text-xs text-muted-foreground">
+										{#if message.proposalState === 'approved'}
+											✓ Εφαρμόστηκε
+										{:else if message.proposalState === 'rejected'}
+											✗ Ακυρώθηκε
+										{:else if message.proposalState === 'failed'}
+											⚠ Αποτυχία
+										{/if}
+									</div>
+								{/if}
 								{#if message.role === 'assistant' && !message.error && message.content !== '' && i === messages.length - 1 && !loading}
 									<div class="flex gap-3 pl-11">
 										<button

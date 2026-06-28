@@ -2,9 +2,9 @@ export function formatCurrency(
 	amount: number,
 	{ decimals = true }: { decimals?: boolean } = {}
 ): string {
-	return new Intl.NumberFormat('en-US', {
+	return new Intl.NumberFormat('en-IE', {
 		style: 'currency',
-		currency: 'USD',
+		currency: 'EUR',
 		minimumFractionDigits: decimals ? 2 : 0,
 		maximumFractionDigits: decimals ? 2 : 0
 	}).format(amount / 100);
@@ -19,11 +19,11 @@ export function getInitials(name: string): string {
 		.slice(0, 2);
 }
 
-export function toCents(dollars: number | string): number {
-	return Math.round(parseFloat(String(dollars)) * 100);
+export function toCents(euros: number | string): number {
+	return Math.round(parseFloat(String(euros)) * 100);
 }
 
-export function toDollars(cents: number): number {
+export function toEuros(cents: number): number {
 	return cents / 100;
 }
 

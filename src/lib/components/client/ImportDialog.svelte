@@ -99,7 +99,7 @@
 		result = data;
 		invalidateAll();
 		const total = data.created + data.updated;
-		toastSuccess(`Imported ${total} ${mode}${total !== 1 ? 's' : ''}`);
+		toastSuccess(`Imported ${total} ${mode === 'clients' ? (total !== 1 ? 'clients' : 'client') : total !== 1 ? 'projects' : 'project'}`);
 	}
 </script>
 

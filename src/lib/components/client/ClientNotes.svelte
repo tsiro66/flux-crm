@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { invalidateAll } from '$app/navigation';
+	import { toastError, toastSuccess } from '$lib/stores/toast.svelte';
 
 	let {
 		clientId,
@@ -24,14 +25,24 @@
 	async function handleNotesChange() {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
+			// Don't persist if nothing actually changed since the last save.
+			if (currentNotes === initialNotes) return;
 			isSaving = true;
-			await fetch(`/api/clients/${clientId}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ notes: currentNotes })
-			});
-			await invalidateAll();
-			isSaving = false;
+			try {
+				const res = await fetch(`/api/clients/${clientId}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ notes: currentNotes })
+				});
+				if (!res.ok) {
+					toastError('Failed to save notes');
+					return;
+				}
+				toastSuccess('Notes saved');
+				await invalidateAll();
+			} finally {
+				isSaving = false;
+			}
 		}, 1000);
 	}
 </script>

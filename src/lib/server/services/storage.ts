@@ -15,6 +15,9 @@ let bucketEnsured: Promise<void> | null = null;
 
 async function ensureBucket(supabase: SupabaseClient) {
 	if (!bucketEnsured) {
+		// Cache the in-flight promise so concurrent requests share one check, but
+		// reset it on failure so a transient error doesn't permanently break all
+		// subsequent uploads until the process restarts.
 		bucketEnsured = (async () => {
 			const { data: buckets } = await supabase.storage.listBuckets();
 			const exists = buckets?.some((b) => b.id === BUCKET_ID);
@@ -31,7 +34,10 @@ async function ensureBucket(supabase: SupabaseClient) {
 					]
 				});
 			}
-		})();
+		})().catch((err) => {
+			bucketEnsured = null;
+			throw err;
+		});
 	}
 	await bucketEnsured;
 }
@@ -45,8 +51,8 @@ export async function generateUploadUrl(userId: string, clientId: string, filena
 
 	const storagePath = generateStoragePath(userId, clientId, filename);
 
-	const { data, error } = await supabaseAdmin().storage
-		.from(BUCKET_ID)
+	const { data, error } = await supabaseAdmin()
+		.storage.from(BUCKET_ID)
 		.createSignedUploadUrl(storagePath);
 
 	if (error) {
@@ -58,8 +64,8 @@ export async function generateUploadUrl(userId: string, clientId: string, filena
 }
 
 export async function generateDownloadUrl(storagePath: string) {
-	const { data, error } = await supabaseAdmin().storage
-		.from(BUCKET_ID)
+	const { data, error } = await supabaseAdmin()
+		.storage.from(BUCKET_ID)
 		.createSignedUrl(storagePath, 3600);
 
 	if (error) {

@@ -11,7 +11,7 @@
 	} from '$lib/components/ui/dialog';
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
-	import { toDollars } from '$lib/utils';
+	import { toEuros } from '$lib/utils';
 	import type { Payment } from '$lib/server/db/types';
 
 	let {
@@ -34,7 +34,7 @@
 		if (open) {
 			if (payment) {
 				form = {
-					amount: String(toDollars(payment.amount)),
+					amount: String(toEuros(payment.amount)),
 					date: new Date(payment.date).toISOString().split('T')[0],
 					note: payment.note || ''
 				};
@@ -94,7 +94,7 @@
 				<p class="text-sm text-destructive">{error}</p>
 			{/if}
 			<div class="space-y-2">
-				<Label for="payment-amount">Amount ($) *</Label>
+				<Label for="payment-amount">Amount (€) *</Label>
 				<Input
 					id="payment-amount"
 					type="number"

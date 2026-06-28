@@ -2,24 +2,24 @@ import { describe, it, expect } from 'vitest';
 import { formatCurrency, getInitials } from '$lib/utils/formatters';
 
 describe('formatCurrency', () => {
-	it('formats cents to USD currency string', () => {
-		expect(formatCurrency(10000)).toBe('$100.00');
+	it('formats cents to EUR currency string', () => {
+		expect(formatCurrency(10000)).toBe('€100.00');
 	});
 
 	it('formats zero cents', () => {
-		expect(formatCurrency(0)).toBe('$0.00');
+		expect(formatCurrency(0)).toBe('€0.00');
 	});
 
 	it('formats small amounts', () => {
-		expect(formatCurrency(99)).toBe('$0.99');
+		expect(formatCurrency(99)).toBe('€0.99');
 	});
 
 	it('formats large amounts', () => {
-		expect(formatCurrency(1000000)).toBe('$10,000.00');
+		expect(formatCurrency(1000000)).toBe('€10,000.00');
 	});
 
 	it('handles amounts with partial cents', () => {
-		expect(formatCurrency(1555)).toBe('$15.55');
+		expect(formatCurrency(1555)).toBe('€15.55');
 	});
 });
 

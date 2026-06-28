@@ -8,3 +8,5 @@ export { createFileSchema } from './file';
 export type { CreateFileInput } from './file';
 export { importClientRowSchema, importProjectRowSchema } from './import';
 export type { ImportClientRowInput, ImportProjectRowInput } from './import';
+export { createConversationSchema, updateConversationSchema } from './chat';
+export type { CreateConversationInput, UpdateConversationInput } from './chat';

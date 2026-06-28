@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { listConversations, createConversation } from '$lib/server/services';
-import { unauthorized } from '$lib/server/errors';
+import { createConversationSchema } from '$lib/validations';
+import { unauthorized, handleZodError, handleApiError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -14,8 +15,16 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) return unauthorized();
 
 	const body = await request.json();
-	const title = body.title || 'New Chat';
+	const parsed = createConversationSchema.safeParse({ title: body?.title ?? 'New Chat' });
 
-	const conversation = await createConversation(locals.user.id, title);
-	return json(conversation, { status: 201 });
+	if (!parsed.success) {
+		return handleZodError(parsed.error);
+	}
+
+	try {
+		const conversation = await createConversation(locals.user.id, parsed.data.title);
+		return json(conversation, { status: 201 });
+	} catch (error) {
+		return handleApiError(error);
+	}
 };

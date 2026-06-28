@@ -1,6 +1,9 @@
 import { db } from '$lib/server/db';
 import { clients } from '$lib/server/db/schema';
+import { escapeLike, likePattern } from '$lib/server/db/like';
 import { eq, and, ilike, or } from 'drizzle-orm';
+import { listFilesByClient } from './file';
+import { deleteStorageFile } from './storage';
 import type { z } from 'zod/v4';
 import type {
 	createClientSchema,
@@ -9,13 +12,9 @@ import type {
 	ImportClientRowInput
 } from '$lib/validations';
 
-function escapeLike(str: string): string {
-	return str.replace(/[%_\\]/g, '\\$&');
-}
-
 export async function listClients(userId: string, search?: string) {
 	if (search) {
-		const pattern = `%${escapeLike(search)}%`;
+		const pattern = likePattern(search);
 		return db
 			.select()
 			.from(clients)
@@ -52,11 +51,28 @@ export async function findClientByEmail(userId: string, email: string) {
 	return client ?? null;
 }
 
+// Find a client by name (case-insensitive) within a tenant. Used as the dedup
+// key for imports when a row has no email — otherwise every blank-email row
+// would create a duplicate client even if one with the same name already exists.
+export async function findClientByName(userId: string, name: string) {
+	const trimmed = name.trim();
+	if (!trimmed) return null;
+	const [client] = await db
+		.select()
+		.from(clients)
+		.where(and(eq(clients.userId, userId), ilike(clients.name, escapeLike(trimmed))))
+		.limit(1);
+	return client ?? null;
+}
+
 export async function upsertClientFromImport(
 	userId: string,
 	data: ImportClientRowInput
 ): Promise<{ action: 'created' | 'updated'; client: typeof clients.$inferSelect }> {
-	const existing = await findClientByEmail(userId, data.email);
+	// Dedup by email when present, otherwise by name (case-insensitive). This
+	// prevents blank-email rows from always creating duplicates.
+	const existing =
+		(await findClientByEmail(userId, data.email)) ?? (await findClientByName(userId, data.name));
 	if (existing) {
 		const [updated] = await db
 			.update(clients)
@@ -147,6 +163,13 @@ export async function patchClient(
 }
 
 export async function deleteClient(userId: string, id: string) {
+	// Delete the actual storage objects before the rows vanish (the files rows
+	// cascade-delete with the client, but the Supabase Storage blobs would leak).
+	const clientFiles = await listFilesByClient(userId, id);
+	await Promise.all(
+		clientFiles.map((f) => deleteStorageFile(f.storagePath).catch(() => undefined))
+	);
+
 	const [deleted] = await db
 		.delete(clients)
 		.where(and(eq(clients.id, id), eq(clients.userId, userId)))

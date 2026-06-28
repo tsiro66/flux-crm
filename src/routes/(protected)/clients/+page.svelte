@@ -22,6 +22,9 @@
 
 	// svelte-ignore state_referenced_locally
 	let search = $state(data.search);
+	$effect(() => {
+		search = data.search;
+	});
 	let showCreateDialog = $state(false);
 	let showImportDialog = $state(false);
 	let showExportDialog = $state(false);
@@ -29,37 +32,41 @@
 	let createError = $state('');
 	let createLoading = $state(false);
 
-	let sortField = $state<'name' | 'email' | 'projects'>('name');
-	let sortDir = $state<'asc' | 'desc'>('asc');
-
-	let filteredClients = $derived.by(() => {
-		let list = [...data.clients];
-		list.sort((a, b) => {
-			let cmp = 0;
-			if (sortField === 'name') cmp = a.name.localeCompare(b.name);
-			else if (sortField === 'email') cmp = (a.email || '').localeCompare(b.email || '');
-			else if (sortField === 'projects')
-				cmp = (data.projectsByClient[a.id] || 0) - (data.projectsByClient[b.id] || 0);
-			return sortDir === 'asc' ? cmp : -cmp;
-		});
-		return list;
+	// svelte-ignore state_referenced_locally
+	let sortField = $state<'name' | 'email' | 'projects'>(data.sortField);
+	// svelte-ignore state_referenced_locally
+	let sortDir = $state<'asc' | 'desc'>(data.sortDir);
+	$effect(() => {
+		sortField = data.sortField;
+		sortDir = data.sortDir;
 	});
 
+	// Server-side sort covers the full result set (see +page.server.ts). Sort
+	// is reflected in the URL so it survives pagination/back-and-forward.
 	function toggleSort(field: 'name' | 'email' | 'projects') {
+		let nextDir: 'asc' | 'desc';
+		let nextField: 'name' | 'email' | 'projects';
 		if (sortField === field) {
-			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+			nextField = sortField;
+			nextDir = sortDir === 'asc' ? 'desc' : 'asc';
 		} else {
-			sortField = field;
-			sortDir = 'asc';
+			nextField = field;
+			nextDir = 'asc';
 		}
+		goto(
+			`/clients?search=${encodeURIComponent(data.search)}&page=1&sort=${nextField}&dir=${nextDir}`
+		);
 	}
 
-	function handleSearch() {
-		goto(`/clients?search=${encodeURIComponent(search)}&page=1`);
+	function handleSearch(e: Event) {
+		e.preventDefault();
+		goto(`/clients?search=${encodeURIComponent(search)}&page=1&sort=${data.sortField}&dir=${data.sortDir}`);
 	}
 
 	function handlePageChange(page: number) {
-		goto(`/clients?search=${encodeURIComponent(data.search)}&page=${page}`);
+		goto(
+			`/clients?search=${encodeURIComponent(data.search)}&page=${page}&sort=${data.sortField}&dir=${data.sortDir}`
+		);
 	}
 
 	async function handleCreate(e: Event) {
@@ -121,7 +128,7 @@
 		</form>
 	</div>
 
-	{#if filteredClients.length === 0}
+	{#if data.clients.length === 0}
 		<div class="py-16 text-center">
 			<p class="text-sm text-muted-foreground">
 				{data.search
@@ -160,7 +167,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each filteredClients as client (client.id)}
+					{#each data.clients as client (client.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
 							onclick={() => (window.location.href = `/clients/${client.id}`)}

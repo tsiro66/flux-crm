@@ -2,7 +2,7 @@
 	import type { Chart as ChartType } from 'chart.js';
 	import type { PageData } from './$types';
 	import { onMount, onDestroy } from 'svelte';
-	import { DollarSign, Clock, FolderOpen, Users } from '@lucide/svelte';
+	import { Euro, Clock, FolderOpen, Users } from '@lucide/svelte';
 	import { formatCurrency } from '$lib/utils';
 
 	let { data }: { data: PageData } = $props();
@@ -10,12 +10,13 @@
 	let canvasEl: HTMLCanvasElement;
 	let chartInstance: ChartType | null = null;
 	let chartModule: typeof import('chart.js') | null = null;
+	let chartRegistered = false;
 
 	const stats = $derived([
 		{
 			label: 'Total Revenue',
 			value: formatCurrency(data.totalRevenue, { decimals: false }),
-			icon: DollarSign
+			icon: Euro
 		},
 		{
 			label: 'Outstanding',
@@ -37,7 +38,13 @@
 	async function ensureChart() {
 		if (!chartModule) {
 			chartModule = await import('chart.js');
-			chartModule.Chart.register(...chartModule.registerables);
+			// Register once for the lifetime of this component. Re-registering on
+			// every chart recreation logs 'already registered' warnings and does no
+			// useful work.
+			if (!chartRegistered) {
+				chartModule.Chart.register(...chartModule.registerables);
+				chartRegistered = true;
+			}
 		}
 		if (chartInstance) {
 			chartInstance.destroy();
@@ -89,9 +96,9 @@
 						ticks: {
 							font: { size: 11 },
 							callback: (value) =>
-								new Intl.NumberFormat('en-US', {
+								new Intl.NumberFormat('en-IE', {
 									style: 'currency',
-									currency: 'USD',
+									currency: 'EUR',
 									minimumFractionDigits: 0
 								}).format(value as number)
 						}

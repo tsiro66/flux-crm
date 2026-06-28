@@ -1,12 +1,17 @@
 import { json } from '@sveltejs/kit';
 import { parseCsv } from '$lib/server/csv';
 import { listAllClients, upsertProjectFromImport } from '$lib/server/services';
+import { rateLimit } from '$lib/server/ratelimit';
 import { importProjectRowSchema } from '$lib/validations';
-import { unauthorized, handleApiError, badRequest } from '$lib/server/errors';
+import { unauthorized, handleApiError, badRequest, tooManyRequests } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) return unauthorized();
+
+	if (!rateLimit(locals.user.id, { max: 1, windowMs: 10_000 })) {
+		return tooManyRequests('Please wait before importing again');
+	}
 
 	try {
 		const form = await request.formData();

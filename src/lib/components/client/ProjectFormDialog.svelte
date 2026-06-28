@@ -111,7 +111,7 @@
 				<Input id="project-title" bind:value={form.title} placeholder="Project title" required />
 			</div>
 			<div class="space-y-2">
-				<Label for="project-amount">Total Amount ($)</Label>
+				<Label for="project-amount">Total Amount (€)</Label>
 				<Input
 					id="project-amount"
 					type="number"

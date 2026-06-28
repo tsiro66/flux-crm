@@ -2,6 +2,13 @@ import { db } from '$lib/server/db';
 import { files } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 
+export async function listFilesByClient(userId: string, clientId: string) {
+	return db
+		.select()
+		.from(files)
+		.where(and(eq(files.clientId, clientId), eq(files.userId, userId)));
+}
+
 export async function createFile(
 	userId: string,
 	data: { clientId: string; storagePath: string; filename: string; fileType: string }

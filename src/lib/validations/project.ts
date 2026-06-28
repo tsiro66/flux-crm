@@ -9,13 +9,17 @@ export const createProjectSchema = z.object({
 	date: z.string().optional().default('')
 });
 
-export const updateProjectSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
-	totalAmount: z.coerce.number().min(0, 'Amount must be positive').default(0),
-	invoiceStatus: z.enum(['for_invoice', 'invoiced', 'no_invoice']),
-	paymentStatus: z.enum(['not_paid', 'partial_payment', 'paid']),
-	date: z.string().optional().default('')
-});
+export const updateProjectSchema = z
+	.object({
+		title: z.string().min(1, 'Title is required').optional(),
+		totalAmount: z.coerce.number().min(0, 'Amount must be positive').optional(),
+		invoiceStatus: z.enum(['for_invoice', 'invoiced', 'no_invoice']).optional(),
+		paymentStatus: z.enum(['not_paid', 'partial_payment', 'paid']).optional(),
+		date: z.string().optional()
+	})
+	.refine((data) => Object.values(data).some((v) => v !== undefined), {
+		message: 'At least one field is required'
+	});
 
 export const updateProjectStatusSchema = z
 	.object({

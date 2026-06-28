@@ -1,5 +1,5 @@
 export { cn } from './cn';
-export { formatCurrency, getInitials, toCents, toDollars, formatDate } from './formatters';
+export { formatCurrency, getInitials, toCents, toEuros, formatDate } from './formatters';
 export {
 	invoiceStatusLabels,
 	paymentStatusLabels,
@@ -9,3 +9,11 @@ export {
 	type PaymentStatus
 } from './status';
 export { stripTags, renderMarkdown } from './chat';
+export {
+	parseProposal,
+	executeProposal,
+	describeProposal,
+	isProposalToolName,
+	PROPOSAL_TOOL_PREFIX,
+	type Proposal
+} from './proposals';

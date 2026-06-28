@@ -2,6 +2,14 @@ import { db } from '$lib/server/db';
 import { chatConversations, chatMessages } from '$lib/server/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
+export async function getConversationById(userId: string, id: string) {
+	const [conversation] = await db
+		.select()
+		.from(chatConversations)
+		.where(and(eq(chatConversations.id, id), eq(chatConversations.userId, userId)));
+	return conversation ?? null;
+}
+
 export async function listConversations(userId: string) {
 	return db
 		.select()
@@ -56,10 +64,8 @@ export async function updateConversation(userId: string, id: string, title: stri
 }
 
 export async function deleteConversation(userId: string, id: string) {
-	await db
-		.delete(chatMessages)
-		.where(and(eq(chatMessages.conversationId, id), eq(chatMessages.userId, userId)));
-
+	// chatMessages cascade-delete with the conversation, so we only need to remove
+	// the conversation row (scoped to the caller).
 	await db
 		.delete(chatConversations)
 		.where(and(eq(chatConversations.id, id), eq(chatConversations.userId, userId)));

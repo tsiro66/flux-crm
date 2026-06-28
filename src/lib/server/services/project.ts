@@ -44,22 +44,22 @@ export async function createProject(userId: string, data: CreateProjectInput) {
 }
 
 export async function updateProject(userId: string, id: string, data: UpdateProjectInput) {
-	const totalAmountCents = toCents(data.totalAmount);
+	const setFields: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() };
+	if (data.title !== undefined) setFields.title = data.title;
+	if (data.totalAmount !== undefined) setFields.totalAmount = toCents(data.totalAmount);
+	if (data.invoiceStatus !== undefined) setFields.invoiceStatus = data.invoiceStatus;
+	if (data.paymentStatus !== undefined) setFields.paymentStatus = data.paymentStatus;
+	if (data.date !== undefined) setFields.date = data.date ? new Date(data.date) : new Date();
 
 	const [updated] = await db
 		.update(projects)
-		.set({
-			title: data.title,
-			totalAmount: totalAmountCents,
-			invoiceStatus: data.invoiceStatus,
-			date: data.date ? new Date(data.date) : new Date(),
-			updatedAt: new Date()
-		})
+		.set(setFields)
 		.where(and(eq(projects.id, id), eq(projects.userId, userId)))
 		.returning();
 
 	if (!updated) return null;
 
+	// Recompute payment status from the (possibly new) totals.
 	const paymentStatus = derivePaymentStatus(updated.paidAmount, updated.totalAmount);
 	if (paymentStatus !== updated.paymentStatus) {
 		await db

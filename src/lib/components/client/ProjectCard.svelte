@@ -11,7 +11,7 @@
 		type PaymentStatus
 	} from '$lib/utils';
 	import { formatDate } from '$lib/utils';
-	import { DollarSign, Pencil, Trash2 } from '@lucide/svelte';
+	import { Euro, Pencil, Trash2 } from '@lucide/svelte';
 	import type { Payment } from '$lib/server/db/types';
 
 	type Project = {
@@ -69,7 +69,7 @@
 		</div>
 		<div class="flex gap-1">
 			<Button size="sm" variant="ghost" onclick={onAddPayment} class="h-7 gap-1 text-xs">
-				<DollarSign class="h-3 w-3" />
+				<Euro class="h-3 w-3" />
 				Payment
 			</Button>
 			<Button size="sm" variant="ghost" onclick={onEdit} class="h-7 text-xs">Edit</Button>

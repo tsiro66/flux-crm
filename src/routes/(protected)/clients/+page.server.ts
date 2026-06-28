@@ -1,32 +1,48 @@
 import { db } from '$lib/server/db';
 import { clients, projects, files } from '$lib/server/db/schema';
-import { eq, count, ilike, and, or } from 'drizzle-orm';
+import { likePattern } from '$lib/server/db/like';
+import { eq, count, ilike, and, or, asc, desc, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
+const SORT_FIELDS = ['name', 'email', 'projects'] as const;
+type SortField = (typeof SORT_FIELDS)[number];
+
+function parseSortField(v: string | null): SortField {
+	return (SORT_FIELDS as readonly string[]).includes(v ?? '') ? (v as SortField) : 'name';
+}
+
+function parseSortDir(v: string | null): 'asc' | 'desc' {
+	return v === 'desc' ? 'desc' : 'asc';
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
-	if (!locals.user) {
-		return {
-			clients: [],
-			projectsByClient: {},
-			filesByClient: {},
-			total: 0,
-			page: 1,
-			totalPages: 1,
-			search: ''
-		};
-	}
+	const empty = {
+		clients: [] as typeof clients.$inferSelect[],
+		projectsByClient: {} as Record<string, number>,
+		filesByClient: {} as Record<string, number>,
+		total: 0,
+		page: 1,
+		totalPages: 1,
+		search: '',
+		sortField: 'name' as SortField,
+		sortDir: 'asc' as 'asc' | 'desc'
+	};
+
+	if (!locals.user) return empty;
 
 	const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 	const limit = 20;
 	const offset = (page - 1) * limit;
 	const search = url.searchParams.get('search') || '';
+	const sortField = parseSortField(url.searchParams.get('sort'));
+	const sortDir = parseSortDir(url.searchParams.get('dir'));
 
 	const userId = locals.user.id;
 
 	const whereCondition = search
 		? and(
 				eq(clients.userId, userId),
-				or(ilike(clients.name, `%${search}%`), ilike(clients.email, `%${search}%`))
+				or(ilike(clients.name, likePattern(search)), ilike(clients.email, likePattern(search)))
 			)
 		: eq(clients.userId, userId);
 
@@ -35,11 +51,27 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const total = Number(countResult.total);
 	const totalPages = Math.max(1, Math.ceil(total / limit));
 
+	// Sort by project count via a correlated scalar subquery. Null emails are
+	// treated as '' (coalesce), matching the previous client-side behaviour for
+	// sorted display.
+	const projectCountExpr = sql<number>`(
+		select count(*)::int
+		from ${projects}
+		where ${projects.clientId} = ${clients.id}
+			and ${projects.userId} = ${userId}
+	)`;
+	const sortExpr =
+		sortField === 'name'
+			? clients.name
+			: sortField === 'email'
+				? sql<string>`coalesce(${clients.email}, '')`
+				: projectCountExpr;
+
 	const clientList = await db
 		.select()
 		.from(clients)
 		.where(whereCondition)
-		.orderBy(clients.createdAt)
+		.orderBy(sortDir === 'asc' ? asc(sortExpr) : desc(sortExpr))
 		.limit(limit)
 		.offset(offset);
 
@@ -73,6 +105,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		total,
 		page,
 		totalPages,
-		search
+		search,
+		sortField,
+		sortDir
 	};
 };
