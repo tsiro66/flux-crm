@@ -16,7 +16,7 @@
 	import { invalidateAll, goto } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
 	import { ImportDialog, ExportDialog, DeleteConfirmDialog, ProjectFormDialog } from '$lib/components/client';
-	import { Search, Plus, Upload, Download, Trash2 } from '@lucide/svelte';
+	import { Search, Plus, Upload, Download, Trash2, X } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -52,12 +52,16 @@
 	let showCreateDialog = $state(false);
 	let showImportDialog = $state(false);
 	let showExportDialog = $state(false);
-	let editProject = $state<ProjectRow | null>(null);
-	let showEditDialog = $state(false);
 
 	let selectedIds = $state<Set<string>>(new Set());
 	let showBulkDeleteDialog = $state(false);
 	let bulkDeleteLoading = $state(false);
+
+	// True when any filter/search narrows the result set — drives the "Clear"
+	// affordance next to the filters.
+	let hasFilters = $derived(
+		!!data.search || !!data.filters.invoice || !!data.filters.payment
+	);
 
 	// Build a /projects URL from the current filter state with overrides for one
 	// field at a time. Keeps every goto consistent and resets to page 1 on any
@@ -114,6 +118,10 @@
 		goto(buildUrl({ [key]: value, page: 1 }));
 	}
 
+	function clearFilters() {
+		goto('/projects');
+	}
+
 	function handlePageChange(page: number) {
 		goto(buildUrl({ page }));
 	}
@@ -146,11 +154,6 @@
 		selectedIds = next;
 	}
 
-	function openEdit(project: ProjectRow) {
-		editProject = project;
-		showEditDialog = true;
-	}
-
 	async function handleBulkDelete() {
 		if (selectedIds.size === 0) return;
 		bulkDeleteLoading = true;
@@ -176,6 +179,12 @@
 
 	function remaining(project: ProjectRow): number {
 		return project.totalAmount - project.paidAmount;
+	}
+
+	function paidPct(project: ProjectRow): number {
+		return project.totalAmount > 0
+			? Math.min((project.paidAmount / project.totalAmount) * 100, 100)
+			: 0;
 	}
 </script>
 
@@ -213,10 +222,10 @@
 		</div>
 	{/if}
 
-	<!-- Filter toolbar: invoice status / payment status + search -->
-	<div class="mb-4 flex flex-wrap items-center gap-2">
+	<!-- Filters row: status selects + clear -->
+	<div class="mb-3 flex flex-wrap items-center gap-2">
 		<select
-			class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+			class="h-9 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 			value={data.filters.invoice ?? ''}
 			onchange={(e) => setFilter('invoice', (e.target as HTMLSelectElement).value)}
 			aria-label="Filter by invoice status"
@@ -228,7 +237,7 @@
 		</select>
 
 		<select
-			class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+			class="h-9 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 			value={data.filters.payment ?? ''}
 			onchange={(e) => setFilter('payment', (e.target as HTMLSelectElement).value)}
 			aria-label="Filter by payment status"
@@ -239,34 +248,48 @@
 			<option value="paid">Paid</option>
 		</select>
 
-		<div class="relative min-w-[16rem] flex-1">
-			<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-			<form onsubmit={handleSearch}>
-				<Input
-					type="text"
-					placeholder="Search by title or client..."
-					value={search}
-					oninput={(e) => (search = (e.target as HTMLInputElement).value)}
-					class="pl-9"
-				/>
-			</form>
-		</div>
+		{#if hasFilters}
+			<Button variant="ghost" size="sm" onclick={clearFilters} class="gap-1.5 text-muted-foreground">
+				<X class="h-3.5 w-3.5" />
+				Clear filters
+			</Button>
+		{/if}
+	</div>
+
+	<!-- Search row (separate from filters) -->
+	<div class="relative mb-4">
+		<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+		<form onsubmit={handleSearch}>
+			<Input
+				type="text"
+				placeholder="Search by title or client..."
+				value={search}
+				oninput={(e) => (search = (e.target as HTMLInputElement).value)}
+				class="pl-9"
+			/>
+		</form>
 	</div>
 
 	{#if data.projects.length === 0}
 		<div class="py-16 text-center">
 			<p class="text-sm text-muted-foreground">
-				{data.search || data.filters.invoice || data.filters.payment
+				{hasFilters
 					? 'No projects match your filters.'
 					: 'No projects yet. Add your first project to get started.'}
 			</p>
+			{#if !hasFilters}
+				<Button onclick={() => (showCreateDialog = true)} class="mt-4 gap-2">
+					<Plus class="h-4 w-4" />
+					Add Project
+				</Button>
+			{/if}
 		</div>
 	{:else}
-		<div class="rounded-lg border">
-			<table class="w-full">
-				<thead>
-					<tr class="border-b bg-muted/30">
-						<th class="w-10 px-4 py-3">
+		<div class="overflow-x-auto rounded-lg border">
+			<table class="w-full min-w-[64rem]">
+				<thead class="sticky top-0 z-10">
+					<tr class="border-b bg-muted/95 backdrop-blur">
+						<th class="w-10 px-4 py-2.5">
 							<input
 								type="checkbox"
 								class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
@@ -279,37 +302,37 @@
 							/>
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('client')}
 						>
 							Client {sortField === 'client' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('title')}
 						>
 							Title {sortField === 'title' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('date')}
 						>
 							Date {sortField === 'date' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+						<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
 							Invoice
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+						<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
 							Payment
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('total')}
 						>
 							Total {sortField === 'total' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('remaining')}
 						>
 							Remaining {sortField === 'remaining' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
@@ -320,9 +343,9 @@
 					{#each data.projects as project (project.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
-							onclick={() => openEdit(project)}
+							onclick={() => goto(`/projects/${project.id}`)}
 						>
-							<td class="px-4 py-3" onclick={(e) => e.stopPropagation()}>
+							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
 								<input
 									type="checkbox"
 									class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
@@ -333,7 +356,7 @@
 									aria-label="Select {project.title}"
 								/>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<a
 									href={`/clients/${project.clientId}`}
 									class="font-medium hover:underline"
@@ -342,44 +365,64 @@
 									{project.clientName}
 								</a>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<span class="font-medium">{project.title}</span>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								{#if project.date}
 									<span class="text-muted-foreground">{formatDate(project.date)}</span>
 								{:else}
 									<span class="text-muted-foreground/50">—</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3">
-								<span
-									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {invoiceStatusVariants[project.invoiceStatus]}"
+							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
+								<button
+									type="button"
+									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 {invoiceStatusVariants[project.invoiceStatus]}"
+									onclick={() => setFilter('invoice', project.invoiceStatus)}
+									title="Filter by this invoice status"
 								>
 									{invoiceStatusLabels[project.invoiceStatus]}
-								</span>
+								</button>
 							</td>
-							<td class="px-4 py-3">
-								<span
-									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {paymentStatusVariants[project.paymentStatus]}"
+							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
+								<button
+									type="button"
+									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 {paymentStatusVariants[project.paymentStatus]}"
+									onclick={() => setFilter('payment', project.paymentStatus)}
+									title="Filter by this payment status"
 								>
 									{paymentStatusLabels[project.paymentStatus]}
-								</span>
+								</button>
 							</td>
-							<td class="px-4 py-3 text-right font-medium">
+							<td class="px-4 py-2 text-right font-medium">
 								{formatCurrency(project.totalAmount)}
 							</td>
-							<td class="px-4 py-3 text-right font-medium {remaining(project) > 0 ? 'text-destructive' : 'text-green-600'}">
-								{formatCurrency(remaining(project))}
+							<td class="px-4 py-2 text-right">
+								<div class="flex flex-col items-end gap-1">
+									<span class="font-medium {remaining(project) > 0 ? 'text-destructive' : 'text-green-600'}">
+										{formatCurrency(remaining(project))}
+									</span>
+									{#if project.totalAmount > 0}
+										<div class="h-1 w-16 overflow-hidden rounded-full bg-muted">
+											<div
+												class="h-full rounded-full bg-green-600"
+												style="width: {paidPct(project)}%"
+											></div>
+										</div>
+									{/if}
+								</div>
 							</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
-		<div class="mt-3 flex items-center justify-between">
+		<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 			<span class="text-xs text-muted-foreground">
 				{data.total} project{data.total !== 1 ? 's' : ''} total
+				· {formatCurrency(data.totalAmountSum)}
+				· <span class="font-medium text-destructive">{formatCurrency(data.outstandingSum)} outstanding</span>
 			</span>
 			<Pagination page={data.page} totalPages={data.totalPages} onPageChange={handlePageChange} />
 		</div>
@@ -387,11 +430,6 @@
 </div>
 
 <ProjectFormDialog bind:open={showCreateDialog} clients={data.clients} project={null} />
-<ProjectFormDialog
-	bind:open={showEditDialog}
-	clients={data.clients}
-	project={editProject}
-/>
 
 <ImportDialog bind:open={showImportDialog} initialMode="projects" />
 <ExportDialog bind:open={showExportDialog} />

@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	// Bulk delete is a destructive action; throttle tighter than single deletes
 	// to make accidental runaway loops less costly.
-	if (!rateLimit(locals.user.id, { max: 5, windowMs: 10_000 })) {
+	if (!rateLimit(locals.user.id, { max: 20, windowMs: 10_000 })) {
 		return tooManyRequests('Too many bulk deletes, please slow down');
 	}
 

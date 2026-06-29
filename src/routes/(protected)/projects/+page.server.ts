@@ -25,6 +25,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		projects: [] as Awaited<ReturnType<typeof listProjects>>['projects'],
 		clients: [] as { id: string; name: string }[],
 		total: 0,
+		totalAmountSum: 0,
+		outstandingSum: 0,
 		page: 1,
 		totalPages: 1,
 		search: '',
@@ -52,7 +54,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		? 'desc'
 		: parseSortDir(url.searchParams.get('dir'));
 
-	const { projects, total } = await listProjects(userId, {
+	const { projects, totals } = await listProjects(userId, {
 		invoice,
 		payment,
 		search,
@@ -68,12 +70,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.where(eq(clients.userId, userId))
 		.orderBy(clients.name);
 
-	const totalPages = Math.max(1, Math.ceil(total / limit));
+	const totalPages = Math.max(1, Math.ceil(totals.total / limit));
 
 	return {
 		projects,
 		clients: clientList,
-		total,
+		total: totals.total,
+		totalAmountSum: totals.totalAmountSum,
+		outstandingSum: totals.outstandingSum,
 		page,
 		totalPages,
 		search,

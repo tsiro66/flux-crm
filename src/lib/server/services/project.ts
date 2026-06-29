@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { projects, clients } from '$lib/server/db/schema';
+import { projects, clients, payments } from '$lib/server/db/schema';
 import { likePattern } from '$lib/server/db/like';
 import { eq, and, ilike, or, asc, desc, count, inArray, sql, type SQL } from 'drizzle-orm';
 import { toCents } from '$lib/utils/formatters';
@@ -161,6 +161,14 @@ export type ProjectListRow = {
 	clientName: string;
 };
 
+// Aggregated totals over the full filtered set (ignoring pagination) for the
+// footer summary. Sums are in cents; outstanding = total - paid.
+export type ProjectListTotals = {
+	total: number;
+	totalAmountSum: number;
+	outstandingSum: number;
+};
+
 // Paged/filtered project list joined to clients for the /projects view. Always
 // scoped by projects.userId; client/invoice/payment/search narrow it further.
 // `remaining` (total - paid) is a Postgres-side expression so the default
@@ -168,7 +176,7 @@ export type ProjectListRow = {
 export async function listProjects(
 	userId: string,
 	filters: ProjectListFilters = {}
-): Promise<{ projects: ProjectListRow[]; total: number }> {
+): Promise<{ projects: ProjectListRow[]; totals: ProjectListTotals }> {
 	const limit = Math.max(1, filters.limit ?? 20);
 	const page = Math.max(1, filters.page ?? 1);
 	const offset = (page - 1) * limit;
@@ -221,6 +229,18 @@ export async function listProjects(
 		.where(where);
 	const total = Number(countRow?.total ?? 0);
 
+	// Sums over the full filtered set (no limit/offset) for the footer summary.
+	const [sums] = await db
+		.select({
+			totalAmountSum: sql<number>`coalesce(sum(${projects.totalAmount}), 0)::int`,
+			paidSum: sql<number>`coalesce(sum(${projects.paidAmount}), 0)::int`
+		})
+		.from(projects)
+		.innerJoin(clients, eq(projects.clientId, clients.id))
+		.where(where);
+	const totalAmountSum = Number(sums?.totalAmountSum ?? 0);
+	const outstandingSum = totalAmountSum - Number(sums?.paidSum ?? 0);
+
 	const rows = await db
 		.select({
 			id: projects.id,
@@ -240,7 +260,10 @@ export async function listProjects(
 		.limit(limit)
 		.offset(offset);
 
-	return { projects: rows as ProjectListRow[], total };
+	return {
+		projects: rows as ProjectListRow[],
+		totals: { total, totalAmountSum, outstandingSum }
+	};
 }
 
 // Bulk delete scoped to the caller's tenant. Mirrors deleteClients: inArray +
@@ -254,6 +277,38 @@ export async function deleteProjects(userId: string, ids: string[]) {
 		.where(and(inArray(projects.id, uniqueIds), eq(projects.userId, userId)))
 		.returning({ id: projects.id });
 	return deleted.map((r) => r.id);
+}
+
+// Single project with its client, scoped to the caller. Used by the project
+// detail page. Returns null if the project doesn't exist or isn't owned by
+// the caller — load() turns that into a 404.
+export async function getProjectWithClient(userId: string, projectId: string) {
+	const [row] = await db
+		.select({
+			id: projects.id,
+			title: projects.title,
+			clientId: projects.clientId,
+			totalAmount: projects.totalAmount,
+			paidAmount: projects.paidAmount,
+			invoiceStatus: projects.invoiceStatus,
+			paymentStatus: projects.paymentStatus,
+			date: projects.date,
+			createdAt: projects.createdAt,
+			clientName: clients.name
+		})
+		.from(projects)
+		.innerJoin(clients, eq(projects.clientId, clients.id))
+		.where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
+	return row ?? null;
+}
+
+// Payments for a project, newest first. Scoped to the caller.
+export async function listPaymentsForProject(userId: string, projectId: string) {
+	return db
+		.select()
+		.from(payments)
+		.where(and(eq(payments.projectId, projectId), eq(payments.userId, userId)))
+		.orderBy(desc(payments.date), desc(payments.createdAt));
 }
 
 export async function findProjectByClientAndTitle(userId: string, clientId: string, title: string) {

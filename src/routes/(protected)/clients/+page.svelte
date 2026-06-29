@@ -16,7 +16,7 @@
 	import { goto } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
 	import { ImportDialog, ExportDialog, DeleteConfirmDialog } from '$lib/components/client';
-	import { Search, Plus, FolderOpen, Upload, Download, Trash2 } from '@lucide/svelte';
+	import { Search, Plus, FolderOpen, Upload, Download, Trash2, X } from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -70,6 +70,10 @@
 		goto(
 			`/clients?search=${encodeURIComponent(data.search)}&page=${page}&sort=${data.sortField}&dir=${data.sortDir}`
 		);
+	}
+
+	function clearSearch() {
+		goto(`/clients?search=&page=1&sort=${data.sortField}&dir=${data.sortDir}`);
 	}
 
 	// Selection is scoped to the loaded page: navigating/searching resets it so a
@@ -204,13 +208,19 @@
 					? 'No clients match your search.'
 					: 'No clients yet. Add your first client to get started.'}
 			</p>
+			{#if !data.search}
+				<Button onclick={() => (showCreateDialog = true)} class="mt-4 gap-2">
+					<Plus class="h-4 w-4" />
+					Add Client
+				</Button>
+			{/if}
 		</div>
 	{:else}
-		<div class="rounded-lg border">
-			<table class="w-full">
-				<thead>
-					<tr class="border-b bg-muted/30">
-						<th class="w-10 px-4 py-3">
+		<div class="overflow-x-auto rounded-lg border">
+			<table class="w-full min-w-[48rem]">
+				<thead class="sticky top-0 z-10">
+					<tr class="border-b bg-muted/95 backdrop-blur">
+						<th class="w-10 px-4 py-2.5">
 							<input
 								type="checkbox"
 								class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
@@ -223,24 +233,24 @@
 							/>
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('name')}
 						>
 							Name {sortField === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('email')}
 						>
 							Email {sortField === 'email' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
 						</th>
 						<th
-							class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
+							class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
 						>
 							Phone
 						</th>
 						<th
-							class="cursor-pointer px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
+							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('projects')}
 						>
 							Projects {sortField === 'projects' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
@@ -251,9 +261,9 @@
 					{#each data.clients as client (client.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
-							onclick={() => (window.location.href = `/clients/${client.id}`)}
+							onclick={() => goto(`/clients/${client.id}`)}
 						>
-							<td class="px-4 py-3" onclick={(e) => e.stopPropagation()}>
+							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
 								<input
 									type="checkbox"
 									class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
@@ -264,24 +274,24 @@
 									aria-label={`Select ${client.name}`}
 								/>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<span class="font-medium hover:underline">{client.name}</span>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								{#if client.email}
 									<span class="text-muted-foreground">{client.email}</span>
 								{:else}
 									<span class="text-muted-foreground/50">—</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								{#if client.phone}
 									<span class="text-muted-foreground">{client.phone}</span>
 								{:else}
 									<span class="text-muted-foreground/50">—</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3 text-right">
+							<td class="px-4 py-2.5 text-right">
 								<span
 									class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
 								>
