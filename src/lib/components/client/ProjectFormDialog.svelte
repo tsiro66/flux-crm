@@ -22,17 +22,24 @@
 		date: Date | null;
 	};
 
+	type ClientOption = { id: string; name: string };
+
 	let {
 		open = $bindable(),
-		clientId,
+		clientId = '',
+		clients = [],
 		project
 	}: {
 		open: boolean;
-		clientId: string;
+		// Preset client (client detail page always passes this). When empty and
+		// `clients` is provided (projects list page), the user picks one.
+		clientId?: string;
+		clients?: ClientOption[];
 		project?: Project | null;
 	} = $props();
 
 	let form = $state({
+		clientId: '',
 		title: '',
 		totalAmount: '0',
 		invoiceStatus: 'for_invoice',
@@ -43,11 +50,15 @@
 	let error = $state('');
 
 	let isEditing = $derived(project !== null && project !== undefined);
+	// Show the client picker only when creating AND a clients list was supplied
+	// (i.e. there is more than one to choose from).
+	let showClientPicker = $derived(!isEditing && clients.length > 0);
 
 	$effect(() => {
 		if (open) {
 			if (project) {
 				form = {
+					clientId,
 					title: project.title,
 					totalAmount: String(project.totalAmount / 100),
 					invoiceStatus: project.invoiceStatus,
@@ -56,6 +67,7 @@
 				};
 			} else {
 				form = {
+					clientId,
 					title: '',
 					totalAmount: '0',
 					invoiceStatus: 'for_invoice',
@@ -72,9 +84,19 @@
 		error = '';
 		loading = true;
 
+		// When a clients list is shown the chosen id wins; otherwise the preset
+		// clientId prop is used (client detail page flow).
+		const resolvedClientId = showClientPicker ? form.clientId : clientId;
+
+		if (!isEditing && !resolvedClientId) {
+			loading = false;
+			error = 'Please select a client';
+			return;
+		}
+
 		const url = isEditing ? `/api/projects/${project!.id}` : '/api/projects';
 		const method = isEditing ? 'PUT' : 'POST';
-		const body = isEditing ? form : { ...form, clientId };
+		const body = isEditing ? form : { ...form, clientId: resolvedClientId };
 
 		const res = await fetch(url, {
 			method,
@@ -105,6 +127,21 @@
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}
 				<p class="text-sm text-destructive">{error}</p>
+			{/if}
+			{#if showClientPicker}
+				<div class="space-y-2">
+					<Label for="project-client">Client *</Label>
+					<select
+						id="project-client"
+						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+						bind:value={form.clientId}
+					>
+						<option value="" disabled>Select a client...</option>
+						{#each clients as c (c.id)}
+							<option value={c.id}>{c.name}</option>
+						{/each}
+					</select>
+				</div>
 			{/if}
 			<div class="space-y-2">
 				<Label for="project-title">Title *</Label>

@@ -50,16 +50,21 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 				continue;
 			}
 
+			// Match the owning client by NAME primarily (per the tenant's client
+			// identity rule: same name = same client, same email/different name =
+			// different client). Fall back to email only when no name is provided.
+			const trimmedName = parsed.data.clientName.trim().toLowerCase();
+			const trimmedEmail = parsed.data.clientEmail.trim().toLowerCase();
 			const clientId =
-				parsed.data.clientEmail.trim() && byEmail.get(parsed.data.clientEmail.trim().toLowerCase())
-					? byEmail.get(parsed.data.clientEmail.trim().toLowerCase())!
-					: (byName.get(parsed.data.clientName.trim().toLowerCase()) ?? null);
+				(trimmedName && byName.get(trimmedName)) ??
+				(trimmedEmail && byEmail.get(trimmedEmail)) ??
+				null;
 
 			if (!clientId) {
 				skipped++;
 				errors.push({
 					row: rowNumber,
-					message: `No client found for "${parsed.data.clientEmail || parsed.data.clientName}"`
+					message: `No client found for "${parsed.data.clientName || parsed.data.clientEmail}"`
 				});
 				continue;
 			}

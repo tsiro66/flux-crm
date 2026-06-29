@@ -5,7 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import type { Snippet } from 'svelte';
 	import type { User } from '@supabase/supabase-js';
-	import { LayoutDashboard, Users, Receipt, MessageCircle, LogOut } from '@lucide/svelte';
+	import { LayoutDashboard, Users, FolderOpen, MessageCircle, LogOut } from '@lucide/svelte';
 
 	let {
 		user,
@@ -16,7 +16,7 @@
 	let navItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/clients', label: 'Clients', icon: Users },
-		{ href: '/finance', label: 'Finance', icon: Receipt },
+		{ href: '/projects', label: 'Projects', icon: FolderOpen },
 		{ href: '/chat', label: 'Chat', icon: MessageCircle }
 	] as const;
 

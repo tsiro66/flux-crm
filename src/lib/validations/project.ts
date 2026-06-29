@@ -21,6 +21,10 @@ export const updateProjectSchema = z
 		message: 'At least one field is required'
 	});
 
+export const bulkDeleteProjectsSchema = z.object({
+	ids: z.array(z.string().uuid('Invalid project ID')).min(1, 'At least one id is required').max(500, 'Too many ids')
+});
+
 export const updateProjectStatusSchema = z
 	.object({
 		invoiceStatus: z.enum(['for_invoice', 'invoiced', 'no_invoice']).optional(),
@@ -29,6 +33,8 @@ export const updateProjectStatusSchema = z
 	.refine((data) => data.invoiceStatus || data.paymentStatus, {
 		message: 'At least one status is required'
 	});
+
+export type BulkDeleteProjectsInput = z.infer<typeof bulkDeleteProjectsSchema>;
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;

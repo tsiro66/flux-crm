@@ -9,9 +9,9 @@ export const importClientRowSchema = z.object({
 
 export const importProjectRowSchema = z
 	.object({
-		clientEmail: z.string().optional().default(''),
-		clientName: z.string().optional().default(''),
-		title: z.string().min(1, 'Title is required'),
+		clientEmail: z.string().trim().optional().default(''),
+		clientName: z.string().trim().optional().default(''),
+		title: z.string().trim().min(1, 'Title is required'),
 		totalAmount: z.coerce.number().min(0, 'Amount must be positive').default(0),
 		paidAmount: z.coerce.number().min(0, 'Amount must be positive').default(0),
 		invoiceStatus: z.preprocess(
@@ -28,7 +28,7 @@ export const importProjectRowSchema = z
 			},
 			z.enum(['not_paid', 'partial_payment', 'paid'])
 		),
-		date: z.string().optional().default('')
+		date: z.string().trim().optional().default('')
 	})
 	.refine((data) => data.clientEmail.trim() || data.clientName.trim(), {
 		message: 'clientEmail or clientName is required',

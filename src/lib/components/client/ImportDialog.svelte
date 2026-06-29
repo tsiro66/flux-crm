@@ -34,7 +34,7 @@
 		]
 	};
 
-	let { open = $bindable() }: { open: boolean } = $props();
+	let { open = $bindable(), initialMode = 'clients' }: { open: boolean; initialMode?: Mode } = $props();
 
 	let mode = $state<Mode>('clients');
 	let file = $state<File | null>(null);
@@ -44,7 +44,7 @@
 
 	$effect(() => {
 		if (open) {
-			mode = 'clients';
+			mode = initialMode;
 			file = null;
 			loading = false;
 			error = '';

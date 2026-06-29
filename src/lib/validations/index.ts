@@ -10,8 +10,8 @@ export type {
 	PatchClientInput,
 	BulkDeleteClientsInput
 } from './client';
-export { createProjectSchema, updateProjectSchema, updateProjectStatusSchema } from './project';
-export type { CreateProjectInput, UpdateProjectInput, UpdateProjectStatusInput } from './project';
+export { createProjectSchema, updateProjectSchema, updateProjectStatusSchema, bulkDeleteProjectsSchema } from './project';
+export type { CreateProjectInput, UpdateProjectInput, UpdateProjectStatusInput, BulkDeleteProjectsInput } from './project';
 export { createPaymentSchema, updatePaymentSchema } from './payment';
 export type { CreatePaymentInput, UpdatePaymentInput } from './payment';
 export { createFileSchema } from './file';
