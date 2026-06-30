@@ -332,36 +332,73 @@ export async function upsertProjectFromImport(
 	const paymentStatus = derivePaymentStatus(paidAmountCents, totalAmountCents);
 	const date = data.date ? new Date(data.date) : new Date();
 
-	const existing = await findProjectByClientAndTitle(userId, clientId, data.title);
-	if (existing) {
-		const [updated] = await db
-			.update(projects)
-			.set({
+	return await db.transaction(async (tx) => {
+		const existing = await findProjectByClientAndTitle(userId, clientId, data.title);
+
+		// The invariant "sum(payments.amount) === projects.paidAmount" must hold
+		// for the dashboard chart (which plots payments over time) and the project
+		// detail page (which lists payments). Import is a bulk replace: it overwrites
+		// the project's total/paid/dates, so it also rewrites the backing payment
+		// history to a single synthetic "Imported payment" row matching the new
+		// paidAmount. Manual payments added on the detail page are lost on re-import
+		// of the same project — acceptable since re-import overwrites every other
+		// field too.
+		if (existing) {
+			await tx
+				.delete(payments)
+				.where(and(eq(payments.projectId, existing.id), eq(payments.userId, userId)));
+
+			const [updated] = await tx
+				.update(projects)
+				.set({
+					title: data.title,
+					totalAmount: totalAmountCents,
+					paidAmount: paidAmountCents,
+					invoiceStatus: data.invoiceStatus,
+					paymentStatus,
+					date,
+					updatedAt: new Date()
+				})
+				.where(and(eq(projects.id, existing.id), eq(projects.userId, userId)))
+				.returning();
+
+			if (paidAmountCents > 0) {
+				await tx.insert(payments).values({
+					projectId: existing.id,
+					amount: paidAmountCents,
+					date,
+					note: 'Imported payment',
+					userId
+				});
+			}
+
+			return { action: 'updated', project: updated ?? existing };
+		}
+
+		const [created] = await tx
+			.insert(projects)
+			.values({
 				title: data.title,
+				clientId,
 				totalAmount: totalAmountCents,
 				paidAmount: paidAmountCents,
 				invoiceStatus: data.invoiceStatus,
 				paymentStatus,
 				date,
-				updatedAt: new Date()
+				userId
 			})
-			.where(and(eq(projects.id, existing.id), eq(projects.userId, userId)))
 			.returning();
-		return { action: 'updated', project: updated ?? existing };
-	}
 
-	const [created] = await db
-		.insert(projects)
-		.values({
-			title: data.title,
-			clientId,
-			totalAmount: totalAmountCents,
-			paidAmount: paidAmountCents,
-			invoiceStatus: data.invoiceStatus,
-			paymentStatus,
-			date,
-			userId
-		})
-		.returning();
-	return { action: 'created', project: created };
+		if (paidAmountCents > 0) {
+			await tx.insert(payments).values({
+				projectId: created.id,
+				amount: paidAmountCents,
+				date,
+				note: 'Imported payment',
+				userId
+			});
+		}
+
+		return { action: 'created', project: created };
+	});
 }
