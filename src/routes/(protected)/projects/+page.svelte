@@ -17,6 +17,7 @@
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
 	import { ImportDialog, ExportDialog, DeleteConfirmDialog, ProjectFormDialog } from '$lib/components/client';
 	import { Search, Plus, Upload, Download, Trash2, X } from '@lucide/svelte';
+	import { ignoreDragClick } from '$lib/actions';
 
 	let { data }: { data: PageData } = $props();
 
@@ -343,6 +344,7 @@
 					{#each data.projects as project (project.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
+							use:ignoreDragClick
 							onclick={() => goto(`/projects/${project.id}`)}
 						>
 							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>

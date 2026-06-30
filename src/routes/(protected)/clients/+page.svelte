@@ -17,6 +17,7 @@
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
 	import { ImportDialog, ExportDialog, DeleteConfirmDialog } from '$lib/components/client';
 	import { Search, Plus, FolderOpen, Upload, Download, Trash2, X } from '@lucide/svelte';
+	import { ignoreDragClick } from '$lib/actions';
 
 	let { data }: { data: PageData } = $props();
 
@@ -261,6 +262,7 @@
 					{#each data.clients as client (client.id)}
 						<tr
 							class="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/50"
+							use:ignoreDragClick
 							onclick={() => goto(`/clients/${client.id}`)}
 						>
 							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
