@@ -1,4 +1,8 @@
-import { getDashboardStats, getMonthlyRevenue } from '$lib/server/services/dashboard';
+import {
+	getDashboardStats,
+	getMonthlyRevenue,
+	getDashboardLists
+} from '$lib/server/services/dashboard';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -8,14 +12,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			outstandingRevenue: 0,
 			projectCount: 0,
 			clientCount: 0,
-			monthlyRevenue: []
+			monthlyRevenue: [],
+			needsAttention: [],
+			recentPayments: []
 		};
 	}
 
-	const [stats, monthlyRevenue] = await Promise.all([
+	const [stats, monthlyRevenue, lists] = await Promise.all([
 		getDashboardStats(locals.user.id),
-		getMonthlyRevenue(locals.user.id)
+		getMonthlyRevenue(locals.user.id),
+		getDashboardLists(locals.user.id)
 	]);
 
-	return { ...stats, monthlyRevenue };
+	return { ...stats, monthlyRevenue, ...lists };
 };

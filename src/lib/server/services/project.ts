@@ -18,6 +18,9 @@ type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 type UpdateProjectStatusInput = z.infer<typeof updateProjectStatusSchema>;
 
 export function derivePaymentStatus(paidAmount: number, totalAmount: number) {
+	// A zero/negative total has nothing to pay: 'paid' only if money actually
+	// arrived, otherwise 'not_paid' (avoids 0/0 showing as paid).
+	if (totalAmount <= 0) return paidAmount > 0 ? ('paid' as const) : ('not_paid' as const);
 	if (paidAmount >= totalAmount) return 'paid' as const;
 	if (paidAmount > 0) return 'partial_payment' as const;
 	return 'not_paid' as const;
@@ -49,7 +52,6 @@ export async function updateProject(userId: string, id: string, data: UpdateProj
 	if (data.title !== undefined) setFields.title = data.title;
 	if (data.totalAmount !== undefined) setFields.totalAmount = toCents(data.totalAmount);
 	if (data.invoiceStatus !== undefined) setFields.invoiceStatus = data.invoiceStatus;
-	if (data.paymentStatus !== undefined) setFields.paymentStatus = data.paymentStatus;
 	if (data.date !== undefined) setFields.date = data.date ? new Date(data.date) : new Date();
 
 	const [updated] = await db

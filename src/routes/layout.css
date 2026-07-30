@@ -21,6 +21,11 @@
 	--color-accent-foreground: oklch(0.205 0 0);
 	--color-destructive: oklch(0.577 0.245 27.325);
 	--color-destructive-foreground: oklch(0.985 0 0);
+	/* Status hues (soft-badge pattern: bg-{token}/10 + text-{token}). Chosen
+	   dark enough to stay readable as text on light backgrounds. */
+	--color-success: oklch(0.527 0.154 150.069);
+	--color-warning: oklch(0.666 0.179 58.318);
+	--color-info: oklch(0.546 0.245 262.881);
 	--color-border: oklch(0.912 0 0);
 	--color-input: oklch(0.912 0 0);
 	--color-ring: oklch(0.55 0 0);

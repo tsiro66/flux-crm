@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { projects, clients, payments } from '$lib/server/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, desc, gt, sql, and } from 'drizzle-orm';
 
 export async function getDashboardStats(userId: string) {
 	const [revenueResult] = await db
@@ -84,4 +84,44 @@ function generateMonthRange(monthlyData: { month: string }[]): string[] {
 
 function formatMonth(year: number, month: number): string {
 	return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+// Dashboard list widgets: projects that still owe money (most actionable —
+// sorted by outstanding desc) and the latest payments received. Both scoped
+// to the caller, capped small since they render as "top N" cards.
+export async function getDashboardLists(userId: string) {
+	const outstandingExpr = sql<number>`(${projects.totalAmount} - ${projects.paidAmount})`;
+
+	const [needsAttention, recentPayments] = await Promise.all([
+		db
+			.select({
+				id: projects.id,
+				title: projects.title,
+				clientName: clients.name,
+				invoiceStatus: projects.invoiceStatus,
+				outstanding: outstandingExpr
+			})
+			.from(projects)
+			.innerJoin(clients, eq(projects.clientId, clients.id))
+			.where(and(eq(projects.userId, userId), gt(outstandingExpr, 0)))
+			.orderBy(desc(outstandingExpr))
+			.limit(5),
+		db
+			.select({
+				id: payments.id,
+				amount: payments.amount,
+				date: payments.date,
+				projectId: projects.id,
+				projectTitle: projects.title,
+				clientName: clients.name
+			})
+			.from(payments)
+			.innerJoin(projects, eq(payments.projectId, projects.id))
+			.innerJoin(clients, eq(projects.clientId, clients.id))
+			.where(eq(payments.userId, userId))
+			.orderBy(desc(payments.date), desc(payments.createdAt))
+			.limit(5)
+	]);
+
+	return { needsAttention, recentPayments };
 }

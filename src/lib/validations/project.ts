@@ -14,7 +14,6 @@ export const updateProjectSchema = z
 		title: z.string().min(1, 'Title is required').optional(),
 		totalAmount: z.coerce.number().min(0, 'Amount must be positive').optional(),
 		invoiceStatus: z.enum(['for_invoice', 'invoiced', 'no_invoice']).optional(),
-		paymentStatus: z.enum(['not_paid', 'partial_payment', 'paid']).optional(),
 		date: z.string().optional()
 	})
 	.refine((data) => Object.values(data).some((v) => v !== undefined), {
@@ -22,7 +21,10 @@ export const updateProjectSchema = z
 	});
 
 export const bulkDeleteProjectsSchema = z.object({
-	ids: z.array(z.string().uuid('Invalid project ID')).min(1, 'At least one id is required').max(500, 'Too many ids')
+	ids: z
+		.array(z.string().uuid('Invalid project ID'))
+		.min(1, 'At least one id is required')
+		.max(500, 'Too many ids')
 });
 
 export const updateProjectStatusSchema = z

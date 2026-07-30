@@ -1,15 +1,7 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import { Button } from '$lib/components/ui/button';
-	import {
-		formatCurrency,
-		paymentStatusLabels,
-		invoiceStatusLabels,
-		paymentStatusVariants,
-		invoiceStatusVariants,
-		type InvoiceStatus,
-		type PaymentStatus
-	} from '$lib/utils';
+	import { formatCurrency, type InvoiceStatus, type PaymentStatus } from '$lib/utils';
 	import { formatDate } from '$lib/utils';
 	import { Euro, Pencil, Trash2 } from '@lucide/svelte';
 	import type { Payment } from '$lib/server/db/types';
@@ -51,12 +43,8 @@
 			</p>
 		</div>
 		<div class="flex shrink-0 items-center gap-1.5">
-			<Badge class={invoiceStatusVariants[project.invoiceStatus]}>
-				{invoiceStatusLabels[project.invoiceStatus]}
-			</Badge>
-			<Badge class={paymentStatusVariants[project.paymentStatus]}>
-				{paymentStatusLabels[project.paymentStatus]}
-			</Badge>
+			<StatusBadge kind="invoice" status={project.invoiceStatus} />
+			<StatusBadge kind="payment" status={project.paymentStatus} />
 		</div>
 	</div>
 	<div class="mt-3 flex items-center justify-between">
@@ -65,7 +53,7 @@
 			<span class="font-medium">{formatCurrency(project.totalAmount)}</span>
 			<span class="mx-2 text-muted-foreground/40">|</span>
 			<span class="text-muted-foreground">Paid: </span>
-			<span class="font-medium text-green-600">{formatCurrency(project.paidAmount)}</span>
+			<span class="font-medium text-success">{formatCurrency(project.paidAmount)}</span>
 		</div>
 		<div class="flex gap-1">
 			<Button size="sm" variant="ghost" onclick={onAddPayment} class="h-7 gap-1 text-xs">
@@ -91,7 +79,7 @@
 			</div>
 			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
 				<div
-					class="h-full rounded-full bg-green-600 transition-all"
+					class="h-full rounded-full bg-success transition-all"
 					style="width: {Math.min((project.paidAmount / project.totalAmount) * 100, 100)}%"
 				></div>
 			</div>
@@ -104,7 +92,7 @@
 					class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
 				>
 					<div class="flex items-center gap-3">
-						<span class="font-medium text-green-600">{formatCurrency(payment.amount)}</span>
+						<span class="font-medium text-success">{formatCurrency(payment.amount)}</span>
 						<span class="text-muted-foreground">{formatDate(payment.date)}</span>
 						{#if payment.note}
 							<span class="text-xs text-muted-foreground">{payment.note}</span>

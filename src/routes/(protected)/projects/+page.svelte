@@ -2,20 +2,18 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Pagination } from '$lib/components/ui/pagination';
-	import {
-		invoiceStatusLabels,
-		invoiceStatusVariants,
-		paymentStatusLabels,
-		paymentStatusVariants,
-		formatCurrency,
-		formatDate,
-		type InvoiceStatus,
-		type PaymentStatus
-	} from '$lib/utils';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
+	import { SortIndicator } from '$lib/components/ui/sort-indicator';
+	import { formatCurrency, formatDate, type InvoiceStatus, type PaymentStatus } from '$lib/utils';
 	import type { PageData } from './$types';
 	import { invalidateAll, goto } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
-	import { ImportDialog, ExportDialog, DeleteConfirmDialog, ProjectFormDialog } from '$lib/components/client';
+	import {
+		ImportDialog,
+		ExportDialog,
+		DeleteConfirmDialog,
+		ProjectFormDialog
+	} from '$lib/components/client';
 	import { Search, Plus, Upload, Download, Trash2, X } from '@lucide/svelte';
 	import { ignoreDragClick } from '$lib/actions';
 
@@ -60,9 +58,7 @@
 
 	// True when any filter/search narrows the result set — drives the "Clear"
 	// affordance next to the filters.
-	let hasFilters = $derived(
-		!!data.search || !!data.filters.invoice || !!data.filters.payment
-	);
+	let hasFilters = $derived(!!data.search || !!data.filters.invoice || !!data.filters.payment);
 
 	// Build a /projects URL from the current filter state with overrides for one
 	// field at a time. Keeps every goto consistent and resets to page 1 on any
@@ -80,8 +76,8 @@
 		const f = data.filters;
 		const next = {
 			search: overrides.search ?? data.search,
-			invoice: overrides.invoice ?? (f.invoice ?? ''),
-			payment: overrides.payment ?? (f.payment ?? ''),
+			invoice: overrides.invoice ?? f.invoice ?? '',
+			payment: overrides.payment ?? f.payment ?? '',
 			sort: overrides.sort ?? f.sort,
 			dir: overrides.dir ?? f.dir,
 			page: overrides.page ?? data.page
@@ -209,14 +205,19 @@
 	</div>
 
 	{#if someSelected}
-		<div class="mb-3 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5">
+		<div
+			class="mb-3 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5"
+		>
 			<span class="text-sm font-medium">
 				{selectedIds.size} project{selectedIds.size !== 1 ? 's' : ''} selected
 			</span>
-			<Button variant="outline" size="sm" onclick={() => (selectedIds = new Set())}>
-				Clear
-			</Button>
-			<Button variant="destructive" size="sm" class="gap-1.5" onclick={() => (showBulkDeleteDialog = true)}>
+			<Button variant="outline" size="sm" onclick={() => (selectedIds = new Set())}>Clear</Button>
+			<Button
+				variant="destructive"
+				size="sm"
+				class="gap-1.5"
+				onclick={() => (showBulkDeleteDialog = true)}
+			>
 				<Trash2 class="h-4 w-4" />
 				Delete selected
 			</Button>
@@ -226,7 +227,7 @@
 	<!-- Filters row: status selects + clear -->
 	<div class="mb-3 flex flex-wrap items-center gap-2">
 		<select
-			class="h-9 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+			class="h-9 rounded-md border border-input bg-background py-1.5 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 			value={data.filters.invoice ?? ''}
 			onchange={(e) => setFilter('invoice', (e.target as HTMLSelectElement).value)}
 			aria-label="Filter by invoice status"
@@ -238,7 +239,7 @@
 		</select>
 
 		<select
-			class="h-9 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+			class="h-9 rounded-md border border-input bg-background py-1.5 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 			value={data.filters.payment ?? ''}
 			onchange={(e) => setFilter('payment', (e.target as HTMLSelectElement).value)}
 			aria-label="Filter by payment status"
@@ -250,7 +251,12 @@
 		</select>
 
 		{#if hasFilters}
-			<Button variant="ghost" size="sm" onclick={clearFilters} class="gap-1.5 text-muted-foreground">
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={clearFilters}
+				class="gap-1.5 text-muted-foreground"
+			>
 				<X class="h-3.5 w-3.5" />
 				Clear filters
 			</Button>
@@ -297,8 +303,7 @@
 								checked={allOnPageSelected}
 								indeterminate={someSelected && !allOnPageSelected}
 								onclick={toggleAllOnPage}
-								onkeydown={(e) =>
-									e.key === ' ' && (e.preventDefault(), toggleAllOnPage())}
+								onkeydown={(e) => e.key === ' ' && (e.preventDefault(), toggleAllOnPage())}
 								aria-label="Select all on page"
 							/>
 						</th>
@@ -306,37 +311,41 @@
 							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('client')}
 						>
-							Client {sortField === 'client' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Client <SortIndicator active={sortField === 'client'} dir={sortDir} />
 						</th>
 						<th
 							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('title')}
 						>
-							Title {sortField === 'title' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Title <SortIndicator active={sortField === 'title'} dir={sortDir} />
 						</th>
 						<th
 							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('date')}
 						>
-							Date {sortField === 'date' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Date <SortIndicator active={sortField === 'date'} dir={sortDir} />
 						</th>
-						<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+						<th
+							class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
+						>
 							Invoice
 						</th>
-						<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+						<th
+							class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
+						>
 							Payment
 						</th>
 						<th
 							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('total')}
 						>
-							Total {sortField === 'total' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Total <SortIndicator active={sortField === 'total'} dir={sortDir} />
 						</th>
 						<th
 							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('remaining')}
 						>
-							Remaining {sortField === 'remaining' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Remaining <SortIndicator active={sortField === 'remaining'} dir={sortDir} />
 						</th>
 					</tr>
 				</thead>
@@ -353,8 +362,7 @@
 									class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
 									checked={selectedIds.has(project.id)}
 									onclick={() => toggleRow(project.id)}
-									onkeydown={(e) =>
-										e.key === ' ' && (e.preventDefault(), toggleRow(project.id))}
+									onkeydown={(e) => e.key === ' ' && (e.preventDefault(), toggleRow(project.id))}
 									aria-label="Select {project.title}"
 								/>
 							</td>
@@ -378,37 +386,37 @@
 								{/if}
 							</td>
 							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
-								<button
-									type="button"
-									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 {invoiceStatusVariants[project.invoiceStatus]}"
+								<StatusBadge
+									kind="invoice"
+									status={project.invoiceStatus}
 									onclick={() => setFilter('invoice', project.invoiceStatus)}
 									title="Filter by this invoice status"
-								>
-									{invoiceStatusLabels[project.invoiceStatus]}
-								</button>
+								/>
 							</td>
 							<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
-								<button
-									type="button"
-									class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 {paymentStatusVariants[project.paymentStatus]}"
+								<StatusBadge
+									kind="payment"
+									status={project.paymentStatus}
 									onclick={() => setFilter('payment', project.paymentStatus)}
 									title="Filter by this payment status"
-								>
-									{paymentStatusLabels[project.paymentStatus]}
-								</button>
+								/>
 							</td>
 							<td class="px-4 py-2 text-right font-medium">
 								{formatCurrency(project.totalAmount)}
 							</td>
 							<td class="px-4 py-2 text-right">
 								<div class="flex flex-col items-end gap-1">
-									<span class="font-medium {remaining(project) > 0 ? 'text-destructive' : 'text-green-600'}">
+									<span
+										class="font-medium {remaining(project) > 0
+											? 'text-destructive'
+											: 'text-success'}"
+									>
 										{formatCurrency(remaining(project))}
 									</span>
 									{#if project.totalAmount > 0}
 										<div class="h-1 w-16 overflow-hidden rounded-full bg-muted">
 											<div
-												class="h-full rounded-full bg-green-600"
+												class="h-full rounded-full bg-success"
 												style="width: {paidPct(project)}%"
 											></div>
 										</div>
@@ -422,9 +430,13 @@
 		</div>
 		<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 			<span class="text-xs text-muted-foreground">
-				{data.total} project{data.total !== 1 ? 's' : ''} total
-				· {formatCurrency(data.totalAmountSum)}
-				· <span class="font-medium text-destructive">{formatCurrency(data.outstandingSum)} outstanding</span>
+				{data.total} project{data.total !== 1 ? 's' : ''} total · {formatCurrency(
+					data.totalAmountSum
+				)}
+				·
+				<span class="font-medium text-destructive"
+					>{formatCurrency(data.outstandingSum)} outstanding</span
+				>
 			</span>
 			<Pagination page={data.page} totalPages={data.totalPages} onPageChange={handlePageChange} />
 		</div>

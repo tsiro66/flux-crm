@@ -4,6 +4,7 @@
 		ClientHeader,
 		ClientNotes,
 		ClientFiles,
+		ClientRecurring,
 		ProjectCard,
 		EditClientDialog,
 		DeleteConfirmDialog,
@@ -104,6 +105,11 @@
 	<div class="grid gap-8 lg:grid-cols-3">
 		<div class="space-y-6 lg:col-span-1">
 			<ClientNotes clientId={data.client.id} initialNotes={data.client.notes || ''} />
+			<ClientRecurring
+				clientId={data.client.id}
+				projects={data.projects}
+				recurring={data.recurring}
+			/>
 			<ClientFiles clientId={data.client.id} files={data.files} />
 		</div>
 

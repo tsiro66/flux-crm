@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import {
-		formatCurrency,
-		formatDate,
-		invoiceStatusLabels,
-		invoiceStatusVariants,
-		paymentStatusLabels,
-		paymentStatusVariants
-	} from '$lib/utils';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
+	import { formatCurrency, formatDate } from '$lib/utils';
 	import type { PageData } from './$types';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/stores/toast.svelte';
@@ -84,7 +78,9 @@
 	<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 		<div class="min-w-0">
 			<h1 class="text-xl font-semibold tracking-tight">{data.project.title}</h1>
-			<div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+			<div
+				class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground"
+			>
 				<a
 					href={`/clients/${data.project.clientId}`}
 					class="font-medium text-foreground hover:underline"
@@ -96,16 +92,8 @@
 				{/if}
 			</div>
 			<div class="mt-3 flex flex-wrap gap-1.5">
-				<span
-					class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {invoiceStatusVariants[data.project.invoiceStatus]}"
-				>
-					{invoiceStatusLabels[data.project.invoiceStatus]}
-				</span>
-				<span
-					class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {paymentStatusVariants[data.project.paymentStatus]}"
-				>
-					{paymentStatusLabels[data.project.paymentStatus]}
-				</span>
+				<StatusBadge kind="invoice" status={data.project.invoiceStatus} />
+				<StatusBadge kind="payment" status={data.project.paymentStatus} />
 			</div>
 		</div>
 		<div class="flex shrink-0 gap-2">
@@ -136,11 +124,13 @@
 		</div>
 		<div class="rounded-lg border p-4">
 			<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Paid</p>
-			<p class="mt-1 text-xl font-semibold text-green-600">{formatCurrency(data.project.paidAmount)}</p>
+			<p class="mt-1 text-xl font-semibold text-success">
+				{formatCurrency(data.project.paidAmount)}
+			</p>
 		</div>
 		<div class="rounded-lg border p-4">
 			<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Remaining</p>
-			<p class="mt-1 text-xl font-semibold {remaining > 0 ? 'text-destructive' : 'text-green-600'}">
+			<p class="mt-1 text-xl font-semibold {remaining > 0 ? 'text-destructive' : 'text-success'}">
 				{formatCurrency(remaining)}
 			</p>
 		</div>
@@ -154,10 +144,7 @@
 				<span>{formatCurrency(remaining)} remaining</span>
 			</div>
 			<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
-				<div
-					class="h-full rounded-full bg-green-600 transition-all"
-					style="width: {paidPct}%"
-				></div>
+				<div class="h-full rounded-full bg-success transition-all" style="width: {paidPct}%"></div>
 			</div>
 		</div>
 	{/if}
@@ -186,13 +173,19 @@
 				<table class="w-full">
 					<thead>
 						<tr class="border-b bg-muted/30">
-							<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+							<th
+								class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
+							>
 								Date
 							</th>
-							<th class="px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase">
+							<th
+								class="px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase"
+							>
 								Amount
 							</th>
-							<th class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+							<th
+								class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
+							>
 								Note
 							</th>
 							<th class="w-20 px-4 py-2.5"></th>
@@ -204,7 +197,7 @@
 								<td class="px-4 py-2.5 text-sm text-muted-foreground">
 									{formatDate(payment.date)}
 								</td>
-								<td class="px-4 py-2.5 text-right text-sm font-medium text-green-600">
+								<td class="px-4 py-2.5 text-right text-sm font-medium text-success">
 									{formatCurrency(payment.amount)}
 								</td>
 								<td class="px-4 py-2.5 text-sm text-muted-foreground">
@@ -271,11 +264,7 @@
 	project={data.project}
 />
 
-<PaymentDialog
-	bind:open={showPaymentDialog}
-	projectId={data.project.id}
-	payment={editingPayment}
-/>
+<PaymentDialog bind:open={showPaymentDialog} projectId={data.project.id} payment={editingPayment} />
 
 <DeleteConfirmDialog
 	bind:open={showDeleteDialog}

@@ -15,7 +15,8 @@ export async function listConversations(userId: string) {
 		.select()
 		.from(chatConversations)
 		.where(eq(chatConversations.userId, userId))
-		.orderBy(desc(chatConversations.updatedAt));
+		.orderBy(desc(chatConversations.updatedAt))
+		.limit(100);
 }
 
 export async function createConversation(userId: string, title = 'New Chat') {
@@ -36,22 +37,26 @@ export async function addMessage(
 	conversationId: string,
 	data: { role: string; content: string }
 ) {
-	const [message] = await db
-		.insert(chatMessages)
-		.values({
-			conversationId,
-			userId,
-			role: data.role,
-			content: data.content
-		})
-		.returning();
+	// Insert + touch the conversation atomically so a crash between the two
+	// writes can't leave updatedAt stale.
+	return db.transaction(async (tx) => {
+		const [message] = await tx
+			.insert(chatMessages)
+			.values({
+				conversationId,
+				userId,
+				role: data.role,
+				content: data.content
+			})
+			.returning();
 
-	await db
-		.update(chatConversations)
-		.set({ updatedAt: new Date() })
-		.where(and(eq(chatConversations.id, conversationId), eq(chatConversations.userId, userId)));
+		await tx
+			.update(chatConversations)
+			.set({ updatedAt: new Date() })
+			.where(and(eq(chatConversations.id, conversationId), eq(chatConversations.userId, userId)));
 
-	return message;
+		return message;
+	});
 }
 
 export async function updateConversation(userId: string, id: string, title: string) {

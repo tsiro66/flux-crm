@@ -15,16 +15,18 @@ export const paymentStatusLabels: Record<PaymentStatus, string> = {
 	paid: 'Paid'
 };
 
+// Soft-badge variants: tinted background + colored text, driven by the theme
+// tokens in routes/layout.css (no hardcoded palette colors, dark-mode ready).
 export const invoiceStatusVariants: Record<InvoiceStatus, string> = {
-	for_invoice: 'bg-blue-600 text-white',
-	invoiced: 'bg-green-600 text-white',
-	no_invoice: 'bg-gray-500 text-white'
+	for_invoice: 'bg-info/10 text-info',
+	invoiced: 'bg-success/10 text-success',
+	no_invoice: 'bg-muted text-muted-foreground'
 };
 
 export const paymentStatusVariants: Record<PaymentStatus, string> = {
-	not_paid: 'bg-red-600 text-white',
-	partial_payment: 'bg-amber-500 text-white',
-	paid: 'bg-green-600 text-white'
+	not_paid: 'bg-destructive/10 text-destructive',
+	partial_payment: 'bg-warning/10 text-warning',
+	paid: 'bg-success/10 text-success'
 };
 
 export type { InvoiceStatus, PaymentStatus };

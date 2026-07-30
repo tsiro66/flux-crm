@@ -133,7 +133,7 @@
 					<Label for="project-client">Client *</Label>
 					<select
 						id="project-client"
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+						class="flex h-10 w-full rounded-md border border-input bg-background py-2 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 						bind:value={form.clientId}
 					>
 						<option value="" disabled>Select a client...</option>
@@ -167,7 +167,7 @@
 					<Label for="project-invoice">Invoice Status</Label>
 					<select
 						id="project-invoice"
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+						class="flex h-10 w-full rounded-md border border-input bg-background py-2 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 						bind:value={form.invoiceStatus}
 					>
 						<option value="for_invoice">For Invoice</option>
@@ -179,7 +179,7 @@
 					<Label for="project-payment">Payment Status</Label>
 					<select
 						id="project-payment"
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+						class="flex h-10 w-full rounded-md border border-input bg-background py-2 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 						bind:value={form.paymentStatus}
 					>
 						<option value="not_paid">Not Paid</option>

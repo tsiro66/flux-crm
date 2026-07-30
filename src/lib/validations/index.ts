@@ -10,13 +10,25 @@ export type {
 	PatchClientInput,
 	BulkDeleteClientsInput
 } from './client';
-export { createProjectSchema, updateProjectSchema, updateProjectStatusSchema, bulkDeleteProjectsSchema } from './project';
-export type { CreateProjectInput, UpdateProjectInput, UpdateProjectStatusInput, BulkDeleteProjectsInput } from './project';
+export {
+	createProjectSchema,
+	updateProjectSchema,
+	updateProjectStatusSchema,
+	bulkDeleteProjectsSchema
+} from './project';
+export type {
+	CreateProjectInput,
+	UpdateProjectInput,
+	UpdateProjectStatusInput,
+	BulkDeleteProjectsInput
+} from './project';
 export { createPaymentSchema, updatePaymentSchema } from './payment';
 export type { CreatePaymentInput, UpdatePaymentInput } from './payment';
 export { createFileSchema } from './file';
 export type { CreateFileInput } from './file';
 export { importClientRowSchema, importProjectRowSchema } from './import';
 export type { ImportClientRowInput, ImportProjectRowInput } from './import';
-export { createConversationSchema, updateConversationSchema } from './chat';
-export type { CreateConversationInput, UpdateConversationInput } from './chat';
+export { createConversationSchema, updateConversationSchema, addMessageSchema } from './chat';
+export type { CreateConversationInput, UpdateConversationInput, AddMessageInput } from './chat';
+export { createRecurringPaymentSchema, updateRecurringPaymentSchema } from './recurring';
+export type { CreateRecurringPaymentInput, UpdateRecurringPaymentInput } from './recurring';

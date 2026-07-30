@@ -4,6 +4,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Pagination } from '$lib/components/ui/pagination';
+	import { SortIndicator } from '$lib/components/ui/sort-indicator';
 	import {
 		Dialog,
 		DialogHeader,
@@ -64,7 +65,9 @@
 
 	function handleSearch(e: Event) {
 		e.preventDefault();
-		goto(`/clients?search=${encodeURIComponent(search)}&page=1&sort=${data.sortField}&dir=${data.sortDir}`);
+		goto(
+			`/clients?search=${encodeURIComponent(search)}&page=1&sort=${data.sortField}&dir=${data.sortDir}`
+		);
 	}
 
 	function handlePageChange(page: number) {
@@ -175,14 +178,19 @@
 	</div>
 
 	{#if someSelected}
-		<div class="mb-3 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5">
+		<div
+			class="mb-3 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5"
+		>
 			<span class="text-sm font-medium">
 				{selectedIds.size} client{selectedIds.size !== 1 ? 's' : ''} selected
 			</span>
-			<Button variant="outline" size="sm" onclick={() => (selectedIds = new Set())}>
-				Clear
-			</Button>
-			<Button variant="destructive" size="sm" class="gap-1.5" onclick={() => (showBulkDeleteDialog = true)}>
+			<Button variant="outline" size="sm" onclick={() => (selectedIds = new Set())}>Clear</Button>
+			<Button
+				variant="destructive"
+				size="sm"
+				class="gap-1.5"
+				onclick={() => (showBulkDeleteDialog = true)}
+			>
 				<Trash2 class="h-4 w-4" />
 				Delete selected
 			</Button>
@@ -228,8 +236,7 @@
 								checked={allOnPageSelected}
 								indeterminate={someSelected && !allOnPageSelected}
 								onclick={toggleAllOnPage}
-								onkeydown={(e) =>
-									e.key === ' ' && (e.preventDefault(), toggleAllOnPage())}
+								onkeydown={(e) => e.key === ' ' && (e.preventDefault(), toggleAllOnPage())}
 								aria-label="Select all on page"
 							/>
 						</th>
@@ -237,13 +244,13 @@
 							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('name')}
 						>
-							Name {sortField === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Name <SortIndicator active={sortField === 'name'} dir={sortDir} />
 						</th>
 						<th
 							class="cursor-pointer px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('email')}
 						>
-							Email {sortField === 'email' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Email <SortIndicator active={sortField === 'email'} dir={sortDir} />
 						</th>
 						<th
 							class="px-4 py-2.5 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
@@ -254,7 +261,7 @@
 							class="cursor-pointer px-4 py-2.5 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground"
 							onclick={() => toggleSort('projects')}
 						>
-							Projects {sortField === 'projects' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+							Projects <SortIndicator active={sortField === 'projects'} dir={sortDir} />
 						</th>
 					</tr>
 				</thead>
@@ -271,8 +278,7 @@
 									class="h-4 w-4 cursor-pointer rounded border-input accent-primary"
 									checked={selectedIds.has(client.id)}
 									onclick={() => toggleRow(client.id)}
-									onkeydown={(e) =>
-										e.key === ' ' && (e.preventDefault(), toggleRow(client.id))}
+									onkeydown={(e) => e.key === ' ' && (e.preventDefault(), toggleRow(client.id))}
 									aria-label={`Select ${client.name}`}
 								/>
 							</td>

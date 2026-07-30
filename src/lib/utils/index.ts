@@ -9,6 +9,7 @@ export {
 	type PaymentStatus
 } from './status';
 export { stripTags, renderMarkdown } from './chat';
+export { currentMonth, nextMonth, monthBefore, dateForMonth } from './months';
 export {
 	parseProposal,
 	executeProposal,

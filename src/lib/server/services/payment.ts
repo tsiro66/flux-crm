@@ -6,6 +6,28 @@ import { derivePaymentStatus } from './project';
 import type { z } from 'zod/v4';
 import type { updatePaymentSchema, CreatePaymentInput } from '$lib/validations';
 
+// The tx handle Drizzle passes into db.transaction callbacks.
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Shared by createPayment and recurring-payment generation: inserts nothing,
+// only bumps the project's paidAmount and re-derives its payment status.
+// Caller supplies the project row (already verified to belong to the user).
+export async function applyPaymentToProject(
+	tx: Tx,
+	project: typeof projects.$inferSelect,
+	amountCents: number
+) {
+	const newPaidAmount = project.paidAmount + amountCents;
+	await tx
+		.update(projects)
+		.set({
+			paidAmount: newPaidAmount,
+			paymentStatus: derivePaymentStatus(newPaidAmount, project.totalAmount),
+			updatedAt: new Date()
+		})
+		.where(eq(projects.id, project.id));
+}
+
 export async function createPayment(userId: string, data: CreatePaymentInput) {
 	const amountCents = toCents(data.amount);
 
@@ -28,17 +50,7 @@ export async function createPayment(userId: string, data: CreatePaymentInput) {
 			})
 			.returning();
 
-		const newPaidAmount = project.paidAmount + amountCents;
-		const newPaymentStatus = derivePaymentStatus(newPaidAmount, project.totalAmount);
-
-		await tx
-			.update(projects)
-			.set({
-				paidAmount: newPaidAmount,
-				paymentStatus: newPaymentStatus,
-				updatedAt: new Date()
-			})
-			.where(eq(projects.id, data.projectId));
+		await applyPaymentToProject(tx, project, amountCents);
 
 		return payment;
 	});

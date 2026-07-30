@@ -34,7 +34,8 @@
 		]
 	};
 
-	let { open = $bindable(), initialMode = 'clients' }: { open: boolean; initialMode?: Mode } = $props();
+	let { open = $bindable(), initialMode = 'clients' }: { open: boolean; initialMode?: Mode } =
+		$props();
 
 	let mode = $state<Mode>('clients');
 	let file = $state<File | null>(null);
@@ -99,7 +100,9 @@
 		result = data;
 		invalidateAll();
 		const total = data.created + data.updated;
-		toastSuccess(`Imported ${total} ${mode === 'clients' ? (total !== 1 ? 'clients' : 'client') : total !== 1 ? 'projects' : 'project'}`);
+		toastSuccess(
+			`Imported ${total} ${mode === 'clients' ? (total !== 1 ? 'clients' : 'client') : total !== 1 ? 'projects' : 'project'}`
+		);
 	}
 </script>
 
@@ -117,7 +120,7 @@
 				<label for="import-mode" class="text-sm font-medium">Data type</label>
 				<select
 					id="import-mode"
-					class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+					class="flex h-10 w-full rounded-md border border-input bg-background py-2 pr-8 pl-3 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 					bind:value={mode}
 					onchange={() => {
 						file = null;
@@ -162,9 +165,9 @@
 			{#if result}
 				<div class="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
 					<div class="flex gap-4">
-						<span class="text-green-600">Created: {result.created}</span>
-						<span class="text-blue-600">Updated: {result.updated}</span>
-						<span class="text-amber-600">Skipped: {result.skipped}</span>
+						<span class="text-success">Created: {result.created}</span>
+						<span class="text-info">Updated: {result.updated}</span>
+						<span class="text-warning">Skipped: {result.skipped}</span>
 					</div>
 					{#if result.errors.length > 0}
 						<div class="max-h-40 overflow-y-auto text-xs">

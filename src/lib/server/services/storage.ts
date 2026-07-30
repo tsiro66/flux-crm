@@ -42,8 +42,17 @@ async function ensureBucket(supabase: SupabaseClient) {
 	await bucketEnsured;
 }
 
+// Filenames come from the client and end up as Supabase Storage object keys.
+// Strip path segments and anything outside a safe whitelist so a hostile
+// filename ("../../other-user/x.pdf") can't escape the tenant's prefix.
+function sanitizeFilename(filename: string): string {
+	const base = filename.split(/[/\\]/).pop() ?? '';
+	const cleaned = base.replace(/\.{2,}/g, '').replace(/[^A-Za-z0-9._-]/g, '_');
+	return cleaned || 'file';
+}
+
 export function generateStoragePath(userId: string, clientId: string, filename: string) {
-	return `${userId}/${clientId}/${Date.now()}-${filename}`;
+	return `${userId}/${clientId}/${Date.now()}-${sanitizeFilename(filename)}`;
 }
 
 export async function generateUploadUrl(userId: string, clientId: string, filename: string) {

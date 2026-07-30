@@ -1,7 +1,14 @@
 import { createServerClient } from '@supabase/ssr';
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, json } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+
+// Fail fast at boot instead of crashing mid-request on a misconfigured deploy.
+const SUPABASE_URL = env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+	throw new Error('Missing required env vars: SUPABASE_URL and/or SUPABASE_ANON_KEY');
+}
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -31,7 +38,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	event.locals.supabase = createServerClient(env.SUPABASE_URL!, env.SUPABASE_ANON_KEY!, {
+	event.locals.supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 		cookies: {
 			getAll() {
 				return event.cookies.getAll();
@@ -62,6 +69,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.user = user;
 
 	if (!user && event.url.pathname !== '/login') {
+		// API callers get a machine-readable 401, browsers get redirected.
+		if (event.url.pathname.startsWith('/api/')) {
+			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
 		throw redirect(303, '/login');
 	}
 

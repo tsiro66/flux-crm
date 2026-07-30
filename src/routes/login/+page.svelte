@@ -30,15 +30,20 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center">
+<div class="flex min-h-screen items-center justify-center bg-muted/30 px-4">
 	<div class="w-full max-w-sm">
-		<div class="mb-8 text-center">
-			<span class="font-logo text-xl font-extrabold tracking-tight">FLUX</span>
+		<div class="mb-6 text-center">
+			<span class="font-logo text-2xl font-extrabold tracking-tight">FLUX</span>
 			<p class="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
 		</div>
-		<form onsubmit={handleLogin} class="space-y-4">
+		<form onsubmit={handleLogin} class="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
 			{#if error}
-				<p class="text-sm text-destructive">{error}</p>
+				<p
+					class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+					role="alert"
+				>
+					{error}
+				</p>
 			{/if}
 			<div class="space-y-2">
 				<Label for="email">Email</Label>

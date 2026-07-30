@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { clients, projects, files, payments } from '$lib/server/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
+import { listRecurringPayments } from '$lib/server/services';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -52,6 +53,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		client,
 		projects: clientProjects,
 		files: clientFiles,
-		projectPayments
+		projectPayments,
+		recurring: await listRecurringPayments(locals.user.id, params.id)
 	};
 };

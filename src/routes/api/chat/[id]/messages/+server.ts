@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { addMessage, getConversationById } from '$lib/server/services';
+import { addMessageSchema } from '$lib/validations';
 import { rateLimit } from '$lib/server/ratelimit';
-import { unauthorized, notFound, badRequest, tooManyRequests } from '$lib/server/errors';
+import { unauthorized, notFound, tooManyRequests, handleZodError } from '$lib/server/errors';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
@@ -12,9 +13,10 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	if (!conversation) return notFound('Conversation');
 
 	const body = await request.json();
+	const parsed = addMessageSchema.safeParse(body);
 
-	if (!body.role || !body.content) {
-		return badRequest('role and content are required');
+	if (!parsed.success) {
+		return handleZodError(parsed.error);
 	}
 
 	// The chat itself streams via the Flue agent; this endpoint only persists
@@ -23,10 +25,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		return tooManyRequests('Too many messages, please slow down');
 	}
 
-	const message = await addMessage(locals.user.id, params.id, {
-		role: body.role,
-		content: body.content
-	});
+	const message = await addMessage(locals.user.id, params.id, parsed.data);
 
 	return json(message, { status: 201 });
 };
